@@ -8,6 +8,8 @@
 #' If not NULL the pull will be saved to the `outputPath` with names (`lbatrossData.rds`,`bigelowData.rds`,`surveyNoLengths.rds`)
 #'
 #'@return A list of survey data pulls
+#'
+#'@export
 
 get_survey_data <- function(channel,outputPath=NULL) {
   
