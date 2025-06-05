@@ -35,8 +35,8 @@ workflow_survey_shannon <- function(inputPathBigelow, inputPathAlbatross, output
   # Add check to skip running workflow if data not present
   if(file.exists(inputPathBigelow) && file.exists(inputPathAlbatross) && (!is.null(outputPath))) {
     
-    indicatorData <- create_survey_shannon(inputPathBigelow = inputPathBigelow,
-                                           inputPathAlbatross = inputPathAlbatross)
+    indicatorData <- SOEworkflows::create_survey_shannon(inputPathBigelow = inputPathBigelow,
+                                                         inputPathAlbatross = inputPathAlbatross)
     # write data to file
     saveRDS(indicatorData,paste0(outputPath,"/survey_shannon.rds"))
   } else {
