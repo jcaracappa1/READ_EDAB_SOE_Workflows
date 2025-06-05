@@ -20,6 +20,8 @@ Imports:
     dplyr,
     data.table,
     survdat,
-    survdat
+    survdat,
+    sf,
+    vegan
 Remotes:
   NOAA-EDAB/survdat
