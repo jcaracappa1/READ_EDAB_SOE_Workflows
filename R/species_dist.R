@@ -22,6 +22,7 @@
 
 
 
+
 create_species_dist <- function(inputPathSurvey, inputPathSpecies, outputPath = NULL) {
  
   end.year <- format(Sys.Date(),"%Y")
