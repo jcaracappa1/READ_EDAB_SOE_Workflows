@@ -8,11 +8,11 @@ inputPathBigelow <- "~/EDAB_Dev/beet/bigelowData.rds"
 
 source(here::here("data-raw/workflow_species_dist.R"))
 
-channel <- dbutils::connect_to_database("NEFSC_USERS","mgrezlik")
+# channel <- dbutils::connect_to_database("NEFSC_USERS","mgrezlik")
 
-rawData <- SOEworkflows::get_survey_data(channel,outputPathDataSets)
+# rawData <- SOEworkflows::get_survey_data(channel,outputPathDataSets)
 
-indD <- workflow_species_dist.R(outputPath = outputPath,
+indD <- workflow_species_distribution(outputPath = outputPath,
                                    inputPathSurvey = inputPathSurvey,
                                    inputPathSpecies = inputPathSpecies)
 
