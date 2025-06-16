@@ -12,6 +12,13 @@
 #'
 #'@return A list of survey data pulls
 #'
+#'@examples
+#'\dontrun{
+#'channel <- dbutils::connect_to_database("server",user)
+#'outputPathDataSets <- here::here()
+#'rawData <- get_survey_data(channel, outputPathDataSets)
+#'}
+#'
 #'@export
 
 get_survey_data <- function(channel, outputPathDatasets=NULL) {
