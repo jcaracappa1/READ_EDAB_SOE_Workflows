@@ -8,7 +8,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # create the ecodata::species_dist indicator for 2025
+#' # create the ecodata::species_dist indicator
 #' create_species_dist(inputPathSurvey <- here::here("surveyNoLengths.rds"),
 #'                          inputPathSpecies <- "/home/<user>/EDAB_Datasets/SOE_species_list_24.rds",
 #'                          outputPath <- here::here())
@@ -20,10 +20,6 @@
 #'
 #' @export
 
-
-# input data for testing
-inputPathSurvey <- here::here("data-raw/surveyNoLengths.rds")
-inputPathSpecies <- here::here("data-raw/SOE_species_list_24.rds")
 
 create_species_dist <- function(inputPathSurvey, inputPathSpecies, outputPath = NULL) {
  
@@ -188,9 +184,42 @@ create_species_dist <- function(inputPathSurvey, inputPathSpecies, outputPath = 
       # excluding 2020 & 2023
       dplyr::filter(!YEAR %in% c(2020,2023))
     
-    # #write output
-    # write.csv(x = dist_mean, file = here::here("data/species_dist_spring.csv"), row.names = FALSE)
+# Final reshaping and metadata (from get_species_dist) ------------------
+    species_dist <- dist_mean |>
+      dplyr::mutate(YEAR = as.integer(YEAR)) |>
+      dplyr::rename(
+        `along-shelf distance` = alongshelf,
+        `distance to coast` = coast,
+        Time = YEAR
+      ) |>
+      tidyr::pivot_longer(-Time, names_to = "Var", values_to = "Value") |>
+      dplyr::mutate(
+        EPU = "All",
+        Units = dplyr::case_when(
+          stringr::str_detect(Var, "distance") ~ "km",
+          stringr::str_detect(Var, "Latitude") ~ "degreesN",
+          stringr::str_detect(Var, "Longitude") ~ "degreesW",
+          stringr::str_detect(Var, "depth") ~ "m",
+          TRUE ~ NA_character_
+        )
+      )
     
+    expanded <- expand.grid(Time = min(species_dist$Time):max(species_dist$Time),
+                            Var = unique(species_dist$Var))
+    
+    species_dist <- dplyr::right_join(species_dist, expanded, by = c("Time", "Var")) |>
+      dplyr::arrange(Time)
+    
+    attr(species_dist, "tech-doc_url") <- "https://noaa-edab.github.io/tech-doc/species-distribution-indicators.html"
+    attr(species_dist, "data_steward") <- c("Kevin Friedland <kevin.freidland@noaa.gov>")
+    attr(species_dist, "plot_script") <- list(`mf_MAB` = "macrofauna_MAB.Rmd-species-dist.R")
+    
+    # Save or return ------------------
+    if (save_clean) {
+      usethis::use_data(species_dist, overwrite = TRUE)
+    } else {
+      return(species_dist)
+    }
     
   } else {
     stop("One or more of the input files are not present in the location specified")
@@ -198,40 +227,46 @@ create_species_dist <- function(inputPathSurvey, inputPathSpecies, outputPath = 
 }
 
 
-get_species_dist <- function(save_clean = F){
-  
-  species_dist <- dist_mean |> 
-    dplyr::rename(`along-shelf distance` = alongshelf,
-                  `distance to coast` = coast,
-                  Time = YEAR) |> 
-    tidyr::pivot_longer(-Time, names_to = "Var", values_to = "Value") |> 
-    dplyr::mutate(EPU = "All",
-                  Units = ifelse(stringr::str_detect(Var,"distance"),"km",
-                                 ifelse(stringr::str_detect(Var,"Latitude"),
-                                        "degreesN",ifelse(stringr::str_detect(Var,"Longitude"),
-                                                          "degreesW",ifelse(stringr::str_detect(Var, "depth"),
-                                                                            "m",NA)))))
-  
-  # Fill in missing data with NAs
-  expanded <- expand.grid(Time = min(species_dist$Time):max(species_dist$Time),
-                          Var = unique(species_dist$Var))
-  
-  species_dist <- dplyr::right_join(species_dist, expanded) |> 
-    dplyr::arrange(Time)
-  
-  # metadata ----
-  attr(species_dist, "tech-doc_url") <- "https://noaa-edab.github.io/tech-doc/species-distribution-indicators.html"
-  # attr(species_dist, "data_files")   <- list(
-  #   species_dist_csv = species_dist_csv)
-  attr(species_dist, "data_steward") <- c(
-    "Kevin Friedland <kevin.freidland@noaa.gov>")
-  attr(species_dist, "plot_script") <- list(
-    `mf_MAB` = "macrofauna_MAB.Rmd-species-dist.R")
-  
-  if (save_clean){
-    usethis::use_data(species_dist, overwrite = T)
-  } else {
-    return(species_dist)
-  }
-}
-get_species_dist(save_clean = T)
+# get_species_dist <- function(save_clean = F){
+#   
+#   # read data
+#   species_dist_csv <- here::here("data/species_dist_spring.csv")
+#   dist_mean <- read.csv(species_dist_csv, stringsAsFactors = F) |> 
+#     dplyr::mutate(YEAR = as.integer(YEAR)) |> 
+#     dplyr::select(YEAR, alongshelf, depth, coast)
+#   
+#   species_dist <- dist_mean |> 
+#     dplyr::rename(`along-shelf distance` = alongshelf,
+#                   `distance to coast` = coast,
+#                   Time = YEAR) |> 
+#     tidyr::pivot_longer(-Time, names_to = "Var", values_to = "Value") |> 
+#     dplyr::mutate(EPU = "All",
+#                   Units = ifelse(stringr::str_detect(Var,"distance"),"km",
+#                                  ifelse(stringr::str_detect(Var,"Latitude"),
+#                                         "degreesN",ifelse(stringr::str_detect(Var,"Longitude"),
+#                                                           "degreesW",ifelse(stringr::str_detect(Var, "depth"),
+#                                                                             "m",NA)))))
+#   
+#   # Fill in missing data with NAs
+#   expanded <- expand.grid(Time = min(species_dist$Time):max(species_dist$Time),
+#                           Var = unique(species_dist$Var))
+#   
+#   species_dist <- dplyr::right_join(species_dist, expanded) |> 
+#     dplyr::arrange(Time)
+#   
+#   # metadata ----
+#   attr(species_dist, "tech-doc_url") <- "https://noaa-edab.github.io/tech-doc/species-distribution-indicators.html"
+#   # attr(species_dist, "data_files")   <- list(
+#   #   species_dist_csv = species_dist_csv)
+#   attr(species_dist, "data_steward") <- c(
+#     "Kevin Friedland <kevin.freidland@noaa.gov>")
+#   attr(species_dist, "plot_script") <- list(
+#     `mf_MAB` = "macrofauna_MAB.Rmd-species-dist.R")
+#   
+#   if (save_clean){
+#     usethis::use_data(species_dist, overwrite = T)
+#   } else {
+#     return(species_dist)
+#   }
+# }
+# get_species_dist(save_clean = T)
