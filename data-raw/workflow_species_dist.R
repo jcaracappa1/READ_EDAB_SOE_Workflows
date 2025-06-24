@@ -1,10 +1,15 @@
 #' Creates species_dist indicator for SOE
 #' 
+#' @description
+#' Creates a data frame of species distribution on the Northeast Shelf (NES) based on survey data.
+#' 
+#' 
+#' 
 #' @param inputPathSurvey Character string. Full path to the survdat data pull rds file
 #' @param inputPathSpecies Character string. Full path to the species list data pull rds file
 #' @param outputPath Character string. Path to folder where data pull should be saved
 #' 
-#' @return Nothing. rds file exported
+#' @return species_dist data frame used in ecodata 
 #' 
 #' @section Dependencies:
 #' 
