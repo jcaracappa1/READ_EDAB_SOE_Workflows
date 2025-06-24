@@ -5,6 +5,7 @@
 #' @param inputPathSurvey Character string. Full path to the survdat data pull rds file
 #' @param inputPathSpecies Character string. Full path to the species list data pull rds file
 #' @param outputPath Character string. Path to folder where data pull should be saved
+#' @param staticPath Character string. Path to folder for static files
 #'
 #' @examples
 #' \dontrun{
@@ -21,7 +22,7 @@
 #' @export
 
 
-create_species_dist <- function(inputPathSurvey, inputPathSpecies, outputPath = NULL) {
+create_species_dist <- function(inputPathSurvey, inputPathSpecies, staticPath, outputPath = NULL) {
  
   end.year <- format(Sys.Date(),"%Y")
    
@@ -61,20 +62,20 @@ create_species_dist <- function(inputPathSurvey, inputPathSpecies, outputPath = 
     spptokeep <- c(13,15,22,23,24,25,26,27,28,32,33,34,35,72,73,74,75,76,77,78,84,102,103,104,105,106,107,108,109,121,131,141,143,155,156,163,164,171,172,176,181,192,193,197,301,401,502,503)
     
 # raster depth grid ------------------------------------------------
-    gdepth <- raster::raster("data-raw/nes_bath_data.nc",band=1)
+    gdepth <- raster::raster(paste0(staticPath,"nes_bath_data.nc"),band=1)
     
 # read coordinates for along shelf diagonal  diag.csv -----------------
-    diag <- read.csv(here::here("data-raw/diag.csv"))
+    diag <- read.csv(here::here(paste0(staticPath,"diag.csv")))
     
 # read coordinate for coast --------------------
-    nescoast2 <- read.csv(here::here("data-raw/nes_coast_2.csv"))
+    nescoast2 <- read.csv(here::here(paste0(staticPath,"nes_coast_2.csv")))
     
 # constants ------------------------------------------------------------
     radt=pi/180
     R <- 6371 # Earth mean radius [km]
     
 # load stratareas ---------------------------------------------------
-    load(here::here("data-raw/stratareas.rdata"))
+    load(here::here(paste0(staticPath,"stratareas.rdata")))
     
 # tidy data ---------------------------------------------------
     # trim the data, filter for chosen season
@@ -122,8 +123,8 @@ create_species_dist <- function(inputPathSurvey, inputPathSpecies, outputPath = 
     survdat_spring <- survdat_spring |> 
       dplyr::mutate(PLOTWT = eff_area*LOGBIO) #really not sure why
     
-    ## Plot stations ---------------------------------------------------
-    # visual test
+## Plot stations ---------------------------------------------------
+    # visual test. Not needed but could help trouble shoot
     # plot(survdat$LON[survdat_spring$YEAR==1974],survdat$LAT[survdat_spring$YEAR==1974])
     
 # number of records to evaluate -----------------------------------
