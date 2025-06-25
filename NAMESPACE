@@ -3,6 +3,7 @@
 export(create_aggregate_biomass)
 export(create_aggregate_biomass_epu)
 export(create_aggregate_biomass_shelfwide)
+export(create_species_dist)
 export(create_survey_shannon)
 export(get_survey_data)
 export(is_even)
