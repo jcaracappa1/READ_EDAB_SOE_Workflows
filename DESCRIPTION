@@ -20,11 +20,12 @@ Imports:
     dplyr,
     data.table,
     survdat,
-    survdat,
     geosphere,
     here,
     raster,
     stringr,
     tidyr
+    sf,
+    vegan
 Remotes:
   NOAA-EDAB/survdat

@@ -2,16 +2,14 @@
 % Please edit documentation in R/aggregate_biomass.r
 \name{create_aggregate_biomass}
 \alias{create_aggregate_biomass}
-\title{Calculates Aggregate biomass data set for automated workflow}
+\title{Calculates aggregate_biomass data set for automated workflow}
 \usage{
-create_aggregate_biomass(inputPathSurvey, inputPathSpecies, outputPath = NULL)
+create_aggregate_biomass(inputPathSurvey, inputPathSpecies)
 }
 \arguments{
 \item{inputPathSurvey}{Character string. Full path to the survdat data pull rds file}
 
 \item{inputPathSpecies}{Character string. Full path to the species list data pull rds file}
-
-\item{outputPath}{Character string. Path to folder where data pull should be saved}
 }
 \value{
 ecodata::aggregate_biomass data frame
@@ -24,8 +22,7 @@ and shelfwide indicators. It is formatted exactly like the ecodata data object
 \dontrun{
 # create the ecodata::aggregate_biomass indicator for 2025
 create_aggregate_biomass(inputPathSurvey = "path/to/survdatData.rds"),
-                         inputPathSpecies = "path/to/species.rds"),
-                         outputPath = "path/to/location/of/output/folder")
+                         inputPathSpecies = "path/to/species.rds")
 
 }
 

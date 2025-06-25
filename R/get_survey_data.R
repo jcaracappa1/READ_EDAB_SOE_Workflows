@@ -3,17 +3,27 @@
 #' @description
 #' Pulls survey data in format required for indicator generation
 #'
-#' @param channel an Object inherited from DBIConnection-class. This object is used to connect to communicate with the database engine.
-#' @param outputPath Character string. Path to folder where data pull should be saved (Defaul = NULL). 
-#' If not NULL the pull will be saved to the `outputPath` with names (`lbatrossData.rds`,`bigelowData.rds`,`surveyNoLengths.rds`)
+#' @param channel an Object inherited from DBIConnection-class. .
+#' This object is used to connect to communicate with the database engine.
+#' @param outputPathDatasets Character string. Path to folder where data pull 
+#' should be saved (Default = NULL). If not NULL the pull will be saved to the
+#' folder `outputPathDatasets` with names (`lbatrossData.rds`,
+#' `bigelowData.rds`,`surveyNoLengths.rds`)
 #'
 #'@return A list of survey data pulls
 #'
+#'@examples
+#'\dontrun{
+#'channel <- dbutils::connect_to_database("server",user)
+#'outputPathDataSets <- here::here()
+#'rawData <- get_survey_data(channel, outputPathDataSets)
+#'}
+#'
 #'@export
 
-get_survey_data <- function(channel,outputPath=NULL) {
+get_survey_data <- function(channel, outputPathDatasets=NULL) {
   
-  end.year <- format(Sys.Date(),"%Y")
+  end.year <- format(Sys.Date(), "%Y")
   # Get the survey data for aggregate biomass
   survey1 <- survdat::get_survdat_data(channel, getLengths = F)
   
@@ -35,10 +45,10 @@ get_survey_data <- function(channel,outputPath=NULL) {
   
   # May need to save these to a specific location
   # Return the data
-  if (!is.null(outputPath)) {
-    saveRDS(al.data,paste0(outputPath,"/albatrossData.rds"))
-    saveRDS(big.data,paste0(outputPath,"/bigelowData.rds"))
-    saveRDS(survey1,paste0(outputPath,"/surveyNoLengths.rds"))
+  if (!is.null(outputPathDatasets)) {
+    saveRDS(al.data, paste0(outputPathDatasets, "/albatrossData.rds"))
+    saveRDS(big.data, paste0(outputPathDataSets, "/bigelowData.rds"))
+    saveRDS(survey1, paste0(outputPathDataSets, "/surveyNoLengths.rds"))
   }
   
   return(survey_data)

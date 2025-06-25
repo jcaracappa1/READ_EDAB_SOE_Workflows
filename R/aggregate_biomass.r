@@ -1,18 +1,16 @@
-#' Calculates Aggregate biomass data set for automated workflow
+#' Calculates aggregate_biomass data set for automated workflow
 #'
 #' This uses the survdat data pull from the survey package and creates EPU
 #' and shelfwide indicators. It is formatted exactly like the ecodata data object
 #'
 #' @param inputPathSurvey Character string. Full path to the survdat data pull rds file
 #' @param inputPathSpecies Character string. Full path to the species list data pull rds file
-#' @param outputPath Character string. Path to folder where data pull should be saved
 #'
 #' @examples
 #' \dontrun{
 #' # create the ecodata::aggregate_biomass indicator for 2025
 #' create_aggregate_biomass(inputPathSurvey = "path/to/survdatData.rds"),
-#'                          inputPathSpecies = "path/to/species.rds"),
-#'                          outputPath = "path/to/location/of/output/folder")
+#'                          inputPathSpecies = "path/to/species.rds")
 #'
 #' }
 #'
@@ -23,7 +21,7 @@
 
 
 
-create_aggregate_biomass <- function(inputPathSurvey, inputPathSpecies, outputPath = NULL) {
+create_aggregate_biomass <- function(inputPathSurvey, inputPathSpecies) {
   
   end.year <- format(Sys.Date(),"%Y")
   # Add some checks (maybe create a check function to be used by other functions)
@@ -35,13 +33,9 @@ create_aggregate_biomass <- function(inputPathSurvey, inputPathSpecies, outputPa
   
   # Combine the two data frames
   combined_data <- rbind(epubio, shelfbio) |>
-    dplyr::as_tibble()
+    dplyr::as_tibble() |>
+    dplyr::relocate(Time, Var, Value, EPU, Units)
   
-  # May need to save these to a specific location
-  # Return the data
-  if (!is.null(outputPath)) {
-    saveRDS(combined_data,paste0(outputPath,"/aggregate_biomass.rds"))
-  }
   return(combined_data)
   
 }

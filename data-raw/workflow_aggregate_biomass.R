@@ -16,7 +16,7 @@
 #'   outputPath <- here::here()
 #'   inputPathSurvey <- here::here("surveyNoLengths.rds")
 #'   inputPathSpecies <- "/home/<user>/EDAB_Datasets/SOE_species_list_24.rds"
-#'   workflow_create_aggregate_biomass(outputPath,inputPathSurvey,inputPathSpecies)
+#'   workflow_aggregate_biomass(outputPath,inputPathSurvey,inputPathSpecies)
 #' }
 #' 
 
@@ -26,11 +26,14 @@ workflow_aggregate_biomass <- function(outputPath,inputPathSurvey,inputPathSpeci
   #get_survey_data(channel,outputPath = outputPath)
   
   # Add check to skip running workflow if data not present
-  if(file.exists(inputPathSpecies) && file.exists(inputPathSurvey)) {
+  if(file.exists(inputPathSpecies) && file.exists(inputPathSurvey) && (!is.null(outputPath))) {
   
-    SOEworkflows::create_aggregate_biomass(inputPathSurvey = inputPathSurvey,
-                             inputPathSpecies = inputPathSpecies,
-                             outputPath = outputPath)
+    indicatorData <- SOEworkflows::create_aggregate_biomass(inputPathSurvey = inputPathSurvey,
+                             inputPathSpecies = inputPathSpecies)
+    
+    # Write data to file
+    saveRDS(indicatorData,paste0(outputPath,"/aggregate_biomass.rds"))
+    
   } else {
     # 
     message("One or more of the input files are not present in the location specified")
