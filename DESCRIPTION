@@ -24,7 +24,7 @@ Imports:
     here,
     raster,
     stringr,
-    tidyr
+    tidyr,
     sf,
     vegan
 Remotes:
