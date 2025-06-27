@@ -20,6 +20,7 @@ Imports:
     dplyr,
     data.table,
     survdat,
+    comlandr,
     geosphere,
     here,
     raster,
@@ -28,4 +29,5 @@ Imports:
     sf,
     vegan
 Remotes:
-  NOAA-EDAB/survdat
+  NOAA-EDAB/survdat,
+  NOAA-EDAB/comlandr
