@@ -1,79 +1,63 @@
-#'R code to construct Bennet Indicator for Ecosystem Project
-#'Author: John Walden
-#'Date: October 4, 2017
-#'
-#'Revised January 18, 2018 to calculate the indicator relative to average conditions
-#'during each time period.
-#'
-#'Modified by Sean Lucey 12/16/2019
-#'
-#'For 2019 report on standardized to 2015 as base year rather than average
-#'
-#'Revised October 24, 2023. The year 1985, which is the first year in the series
-#'is the base year. This may need to be modified in the future if the length of
-#'the time series changes
-#'
-#'Revised by John Walden 01/11/2024 to document changes and post final version
-#'to Github
-#'
-#'Revised by ABeet 10/2024 for 2025 report
-
-#-------------------------------------------------------------------------------
-# #Required packages
-# library(data.table)
-# library(dplyr)
-# library(ggplot2)
-# library(ecodata)
-# library(RColorBrewer)
-#-------------------------------------------------------------------------------
-#User created functions
-bar.axis <- function(x) {
-  out <- 1:x
-  for (i in 1:(x - 1)) {
-    out[i + 1] <- .7 + (i * 1.2)
-  }
-  out[1] <- .7
-  return(out)
-}
-
 #' create the bennet indicator
 #'
 #' @param inputPathBennet Character string. Full path to the comland data pull rds file
 #' @param inputPathSpecies Character string. Full path to the species list data pull rds file
 #'
 #' @return ecodata::bennet data frame
+#' 
+#' 
+#' History, R code to construct Bennet Indicator for Ecosystem Project
+#' Author: John Walden
+#' Date: October 4, 2017
+#'
+#' Revised January 18, 2018 to calculate the indicator relative to average conditions
+#' during each time period.
+#'
+#' Modified by Sean Lucey 12/16/2019
+#'
+#' For 2019 report on standardized to 2015 as base year rather than average
+#'
+#' Revised October 24, 2023. The year 1985, which is the first year in the series
+#' is the base year. This may need to be modified in the future if the length of
+#' the time series changes
+#'
+#' Revised by John Walden 01/11/2024 to document changes and post final version
+#' to Github
+#'
+#' Revised by ABeet 10/2024 for 2025 report
+#' @export
 
 create_bennet <- function(inputPathBennet, inputPathSpecies) {
+  
   end.year <- format(Sys.Date(), "%Y")
   # read in comland data
-  comland.data <- readRDS(inputPath)$comland |>
+  comland.data <- readRDS(inputPathBennet)$comland |>
     dplyr::filter(YEAR <= end.year)
-
-  #Load species and PDT codes
-  #This may need to be updated if the species in the feeding guilds changes
+  # Load species data
+  # This may need to be updated if the species in the feeding guilds changes
   species <- readRDS(inputPathSpecies)
 
   #Only take U.S. landings where the value is greater than zero
-  ecosys2 <- subset(comland.data, US == 'TRUE' & YEAR >= 1982 & SPPVALUE >= 0)
+  ecosys2 <- base::subset(comland.data, US == 'TRUE' & YEAR >= 1982 & SPPVALUE >= 0)
   ecosys2[, NESPP3 := as.numeric(NESPP3)]
   #Note, Next Line is to take out Eastern Oysters from the 2024 Report.
   #This may need to be revised once the problem with Eastern Oyster value
   #can be determined. NESPP3=789
-  ecosys2 <- subset(ecosys2, NESPP3 != 789)
+  ecosys2 <- base::subset(ecosys2, NESPP3 != 789)
   #############################################################################
   # eliminates two species with non-unique NESPP3 codes
   species <- species[(species$ITISSPP != 169537 & species$ITISSPP != 172413), ]
   ##############################################################################
 
   ##############################################################################
-  spp2 <- select(species, NESPP3, SOE.24, Fed.Managed)
-  spp2 <- unique(spp2[NESPP3 > 0, list(NESPP3, SOE.24, Fed.Managed)])
+  spp2 <- dplyr::select(species, NESPP3, SOE.24, Fed.Managed)
+  spp2 <- base::unique(spp2[NESPP3 > 0, list(NESPP3, SOE.24, Fed.Managed)])
   ################################################################################
   #End of External Data Pulls
   ################################################################################
-  sp_combine <- merge(ecosys2, spp2, by = "NESPP3", all.x = TRUE)
+  sp_combine <- base::merge(ecosys2, spp2, by = "NESPP3", all.x = TRUE)
 
-  add.apex <- data.table(
+  add.apex <- data.table::data.table(
     NESPP3 = 000,
     YEAR = 1971,
     MONTH = 0,
@@ -89,7 +73,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
     SOE.24 = 'Apex Predator',
     Fed.Managed = NA
   )
-  sp_combine <- rbindlist(list(sp_combine, add.apex), use.names = T)
+  sp_combine <- data.table::rbindlist(list(sp_combine, add.apex), use.names = T)
 
   sp_combine <- sp_combine[(SPPVALUE > 0), ]
   #Subset data into Georges Bank group
@@ -102,7 +86,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
 
   #Set Up data Table
   gb.landsum <- GB[,
-    lapply(.SD, sum, na.rm = T),
+    base::lapply(.SD, sum, na.rm = T),
     by = c('YEAR', 'SOE.24'),
     .SDcols = c('SPPVALUE', 'SPPLIVMT')
   ]
@@ -110,7 +94,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   gb.landsum[is.na(PRICE), PRICE := 0]
 
   gom.landsum <- GOM[,
-    lapply(.SD, sum, na.rm = T),
+    base::lapply(.SD, sum, na.rm = T),
     by = c('YEAR', 'SOE.24'),
     .SDcols = c('SPPVALUE', 'SPPLIVMT')
   ]
@@ -118,7 +102,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   gom.landsum[is.na(PRICE), PRICE := 0]
 
   mab.landsum <- MAB[,
-    lapply(.SD, sum, na.rm = T),
+    base::lapply(.SD, sum, na.rm = T),
     by = c('YEAR', 'SOE.24'),
     .SDcols = c('SPPVALUE', 'SPPLIVMT')
   ]
@@ -128,7 +112,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
 
   #Look at mid-managed
   mab.landsum.managed <- MAB.managed[,
-    lapply(.SD, sum, na.rm = T),
+    base::lapply(.SD, sum, na.rm = T),
     by = c('YEAR', 'SOE.24'),
     .SDcols = c('SPPVALUE', 'SPPLIVMT')
   ]
@@ -141,15 +125,15 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   #The next lines are to calculate base year values for landings
   #and value for the time series by feeding guild
   gb.baseval <- gb.landsum[YEAR == 1982, list(SOE.24, SPPVALUE, SPPLIVMT)]
-  setnames(gb.baseval, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
+  data.table::setnames(gb.baseval, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
   gb.baseval[, BASEP := BASEV / BASEQ]
 
   gom.baseval <- gom.landsum[YEAR == 1982, list(SOE.24, SPPVALUE, SPPLIVMT)]
-  setnames(gom.baseval, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
+  data.table::setnames(gom.baseval, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
   gom.baseval[, BASEP := BASEV / BASEQ]
 
   mab.baseval <- mab.landsum[YEAR == 1982, list(SOE.24, SPPVALUE, SPPLIVMT)]
-  setnames(mab.baseval, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
+  data.table::setnames(mab.baseval, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
   mab.baseval[, BASEP := BASEV / BASEQ]
 
   #Managed Mid
@@ -157,14 +141,14 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
     YEAR == 1982,
     list(SOE.24, SPPVALUE, SPPLIVMT)
   ]
-  setnames(mab.baseval.managed, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
+  data.table::setnames(mab.baseval.managed, c('SPPVALUE', 'SPPLIVMT'), c('BASEV', 'BASEQ'))
   mab.baseval.managed[, BASEP := BASEV / BASEQ]
 
   #Merge Value data frame with Base Year Value Data Frame
-  gb.value <- merge(gb.landsum, gb.baseval, by = 'SOE.24')
-  gom.value <- merge(gom.landsum, gom.baseval, by = 'SOE.24')
-  mab.value <- merge(mab.landsum, mab.baseval, by = 'SOE.24')
-  mab.value.managed <- merge(
+  gb.value <- base::merge(gb.landsum, gb.baseval, by = 'SOE.24')
+  gom.value <- base::merge(gom.landsum, gom.baseval, by = 'SOE.24')
+  mab.value <- base::merge(mab.landsum, mab.baseval, by = 'SOE.24')
+  mab.value.managed <- base::merge(
     mab.landsum.managed,
     mab.baseval.managed,
     by = 'SOE.24'
@@ -174,15 +158,15 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   #NOTE: ALL values are normalized to $1,000,000
   gb.value[, VI := ((0.5 * (BASEP + PRICE)) * (SPPLIVMT - BASEQ)) / 1000000]
   gb.value[, PI := ((0.5 * (BASEQ + SPPLIVMT)) * (PRICE - BASEP)) / 1000000]
-  setkey(gb.value, 'YEAR')
+  data.table::setkey(gb.value, 'YEAR')
 
   gom.value[, VI := ((0.5 * (BASEP + PRICE)) * (SPPLIVMT - BASEQ)) / 1000000]
   gom.value[, PI := ((0.5 * (BASEQ + SPPLIVMT)) * (PRICE - BASEP)) / 1000000]
-  setkey(gom.value, 'YEAR')
+  data.table::setkey(gom.value, 'YEAR')
 
   mab.value[, VI := ((0.5 * (BASEP + PRICE)) * (SPPLIVMT - BASEQ)) / 1000000]
   mab.value[, PI := ((0.5 * (BASEQ + SPPLIVMT)) * (PRICE - BASEP)) / 1000000]
-  setkey(mab.value, 'YEAR')
+  data.table::setkey(mab.value, 'YEAR')
 
   mab.value.managed[,
     VI := ((0.5 * (BASEP + PRICE)) * (SPPLIVMT - BASEQ)) / 1000000
@@ -190,11 +174,11 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   mab.value.managed[,
     PI := ((0.5 * (BASEQ + SPPLIVMT)) * (PRICE - BASEP)) / 1000000
   ]
-  setkey(mab.value.managed, 'YEAR')
+  data.table::setkey(mab.value.managed, 'YEAR')
 
   #The next Data table sets up the yearly aggregate Bennet PI and VI
   gb.biyear <- gb.value[,
-    lapply(.SD, sum),
+    base::lapply(.SD, sum),
     by = 'YEAR',
     .SDcols = c("VI", "PI", "BASEV", "SPPVALUE")
   ]
@@ -202,7 +186,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   gb.biyear[, BI := VI + PI]
 
   gom.biyear <- gom.value[,
-    lapply(.SD, sum),
+    base::lapply(.SD, sum),
     by = 'YEAR',
     .SDcols = c("VI", "PI", "BASEV", "SPPVALUE")
   ]
@@ -210,7 +194,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   gom.biyear[, BI := VI + PI]
 
   mab.biyear <- mab.value[,
-    lapply(.SD, sum),
+    base::lapply(.SD, sum),
     by = 'YEAR',
     .SDcols = c("VI", "PI", "BASEV", "SPPVALUE")
   ]
@@ -218,7 +202,7 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   mab.biyear[, BI := VI + PI]
 
   mab.biyear.managed <- mab.value.managed[,
-    lapply(.SD, sum),
+    base::lapply(.SD, sum),
     by = 'YEAR',
     .SDcols = c("VI", "PI", "BASEV", "SPPVALUE")
   ]
@@ -230,57 +214,57 @@ create_bennet <- function(inputPathBennet, inputPathSpecies) {
   region.abb <- c('GB', 'GOM', 'MAB')
   bennet <- c()
   for (i in 1:3) {
-    region.value <- get(paste0(regions[i], '.value'))
+    region.value <- base::get(paste0(regions[i], '.value'))
 
     #Value Index per feeding guild
     vi.region <- region.value[, list(YEAR, VI, SOE.24)]
     vi.region[, Var := paste(SOE.24, 'Volume Indicator - Bennet')]
     vi.region[, SOE.24 := NULL]
-    setnames(vi.region, c('YEAR', 'VI'), c('Time', 'Value'))
+    data.table::setnames(vi.region, c('YEAR', 'VI'), c('Time', 'Value'))
     vi.region[, Units := 'Million Dollars U.S.']
     vi.region[, Region := region.abb[i]]
     vi.region[, Source := 'Commercial Fisheries Database (comland)']
-    bennet <- rbindlist(list(bennet, vi.region))
+    bennet <- data.table::rbindlist(list(bennet, vi.region))
 
     #Price Index per feeding guild
     pi.region <- region.value[, list(YEAR, PI, SOE.24)]
     pi.region[, Var := paste(SOE.24, 'Price Indicator - Bennet')]
     pi.region[, SOE.24 := NULL]
-    setnames(pi.region, c('YEAR', 'PI'), c('Time', 'Value'))
+    data.table::setnames(pi.region, c('YEAR', 'PI'), c('Time', 'Value'))
     pi.region[, Units := 'Million Dollars U.S.']
     pi.region[, Region := region.abb[i]]
     pi.region[, Source := 'Commercial Fisheries Database (comland)']
-    bennet <- rbindlist(list(bennet, pi.region))
+    bennet <- data.table::rbindlist(list(bennet, pi.region))
 
     #By year
-    region.biyear <- get(paste0(regions[i], '.biyear'))
+    region.biyear <- base::get(paste0(regions[i], '.biyear'))
 
     #Volume
     vi <- region.biyear[, list(YEAR, VI)]
-    setnames(vi, c('YEAR', 'VI'), c('Time', 'Value'))
+    data.table::setnames(vi, c('YEAR', 'VI'), c('Time', 'Value'))
     vi[, Var := 'Total Volume Indicator - Bennet']
     vi[, Units := 'Million Dollars U.S.']
     vi[, Region := region.abb[i]]
     vi[, Source := 'Commercial Fisheries Database (comland)']
-    bennet <- rbindlist(list(bennet, vi))
+    bennet <- data.table::rbindlist(list(bennet, vi))
 
     #Price
     pi <- region.biyear[, list(YEAR, PI)]
-    setnames(pi, c('YEAR', 'PI'), c('Time', 'Value'))
+    data.table::setnames(pi, c('YEAR', 'PI'), c('Time', 'Value'))
     pi[, Var := 'Total Price Index - Bennet']
     pi[, Units := 'Million Dollars U.S.']
     pi[, Region := region.abb[i]]
     pi[, Source := 'Commercial Fisheries Database (comland)']
-    bennet <- rbindlist(list(bennet, pi))
+    bennet <- data.table::rbindlist(list(bennet, pi))
 
     #Revenue Change
     rev <- region.biyear[, list(YEAR, revchange)]
-    setnames(rev, c('YEAR', 'revchange'), c('Time', 'Value'))
+    data.table::setnames(rev, c('YEAR', 'revchange'), c('Time', 'Value'))
     rev[, Var := 'Total Revenue Change - Bennet']
     rev[, Units := 'Million Dollars U.S.']
     rev[, Region := region.abb[i]]
     rev[, Source := 'Commercial Fisheries Database (comland)']
-    bennet <- rbindlist(list(bennet, rev))
+    bennet <- data.table::rbindlist(list(bennet, rev))
   }
 
   # restructure for ecodata submission
