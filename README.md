@@ -22,7 +22,7 @@ To contribute an indicator workflow to this repo, please follow the steps below:
 -  Final testing should be done inside your Rstudio container. (You'll need to repeat the first few steps; clone, pull, build)
 -  To test your workflow use the `example_test_runs.r` as a template.
 -  To test the R package, please build the package and then run `devtools::check()`, either from the command line or click the `check` button under the build tab in Rstudio
-   - If any errors or warnings arise (you can ignore `Notes`),  please try to fix them prior to creating a pull request
+   - If any errors arise (you can ignore `Notes` and `warnings`),  please try to fix them prior to creating a pull request
 -  When checks pass, create a pull request into the `dev` branch and assign two people as reviewers
 
 
