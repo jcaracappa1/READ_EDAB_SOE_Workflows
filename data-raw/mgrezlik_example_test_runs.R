@@ -1,6 +1,7 @@
 # Example of how to test on the Rstudio container 
 outputPathDataSets <- "/home/mgrezlik/EDAB_Dev/beet"
 outputPath <- "/home/mgrezlik/EDAB_Dev/beet"
+input_path_commercial_comdat <- "/home/mgrezlik/EDAB_Dev/beet/commercial_comdat.rds"
 inputPathSurvey <- "/home/mgrezlik/EDAB_Dev/beet/surveyNoLengths.rds"
 inputPathSpecies <- "/home/mgrezlik/EDAB_Datasets/SOE_species_list_24.rds"
 inputPathAlbatross <- "/home/mgrezlik/EDAB_Dev/beet/albatrossData.rds"
