@@ -1,127 +1,62 @@
-#' Pull NAFO data from 21A database
+# get_nafo_21a_soe -------------------
+
+#' Process NAFO 21A Catch Data
 #'
-#' Joins data to EPUs and add NAFO species codes.
-#' Removes USA landings
+#' @description
+#' Reads NAFO 21A catch data, joins it with EPU (Ecological Production Unit)
+#' spatial data, and attaches NAFO species codes. Landings from the USA are
+#' excluded from the final summary.
 #'
-#' This was created because the NAFO 21B data set (which is used in comlandr::get_foregin_data) ended in 2018
-#' So we were missing data
-#'
-#' @param isplot Boolean. Plot summary of catch data by EPU (aggregation over species)
-#' @param staticPath Character string. Path to folder for static files
-#'
-#' @return list of 2 objects (data frame and ggplot object)
-#' \item{Year}{Year}
-#' \item{EPU}{EPU}
-#' \item{Species}{NAFO Species Name}
-#' \item{Code}{NAFO Species Code}
-#' \item{Abbreviation}{NAFO Species Abbreviation}
-#' \item{MT}{Metric Tons}
-#'
-#' @section Source
-#'
-#' NAFO data files are pulled from nafo.int.
-#' The catch data is from database 21A (https://www.nafo.int/Data/STATLANT-21A)
-#' The supporting division codes and species text files are from database 21B (https://www.nafo.int/Data/Catch-Statistics-STATLANT-21B)
+#' This function was created to supplement NAFO 21B data, which concluded in 2018.
 #' 
-#' @importFrom dplyr filter rename select left_join group_by summarise distinct mutate
-#' @importFrom tidyr separate
+#' Using as a template: https://github.com/NOAA-EDAB/SOE_data/blob/main/R/get_nafo_21a_soe.R
+#'
+#' @param path_to_files A character string providing the full file path to the
+#'   NAFO 21A catch CSV file.
+#' @param create_plot A boolean value. If `TRUE`, a ggplot object summarizing
+#'   catch by EPU over time is generated and returned.
+#'
+#' @return A list containing two objects:
+#' \describe{
+#'   \item{data}{A data frame with columns: `Year`, `EPU`, `Species`, `Code`,
+#'   `Abbreviation`, and total catch in `MT` (Metric Tons).}
+#'   \item{plot}{A ggplot object if `create_plot = TRUE`; otherwise, `NULL`.}
+#' }
+#'
+#' @section Source:
+#' NAFO data files are sourced from nafo.int.
+#' - Catch Data: 21A Database (https://www.nafo.int/Data/STATLANT-21A)
+#' - Supporting Files: 21B Database (https://www.nafo.int/Data/Catch-Statistics-STATLANT-21B)
+#' 
+#' @importFrom dplyr rename select filter left_join group_by summarise
+#' @importFrom ggplot2 ggplot aes geom_line labs theme_minimal
 #' @importFrom readr read_csv read_delim
-#' @importFrom tibble tibble as_tibble
-#' @importFrom ggplot2 ggplot geom_line aes
-#' @importFrom utils download.file unzip
-#' @importFrom stringr str_remove
+#' @importFrom tibble tribble
+#' @importFrom tidyr separate
+#' @importFrom utils download.file
 #'
 #' @export
 
-
-# # using data.table ----------------------
-# # copied code from https://github.com/NOAA-EDAB/SOE_data/blob/main/R/get_nafo_21a_soe.R
-# 
-# get_nafo_21a_soe <- function(isplot = F, pathToFiles=NULL) {
-# 
-#   if(is.null(pathToFiles)) {
-#     stop("Please specify a path to catch data from 21A.")
-#   }
-# 
-#   # map EPU to nafo division codes
-#   neusAreaCodes <- data.frame(EPU = c("SS","GOM","GB","MAB","GB","GB","GB","MAB","MAB","MAB"), AreaCode = c(47,51:56,61:63))
-#   # read in nafo division codes
-#   temp <- tempfile()
-#   download.file("https://www.nafo.int/Portals/0/Stats/nafo-21b-2010-18.zip",destfile=temp,quiet=TRUE)
-# 
-#   # division codes. supporting table
-#   divisions <- readr::read_csv(unz(temp,"NAFO-21B-2010-18/divisions.txt"),col_names = F,show_col_types = F)  |>
-#     dplyr::rename(AreaCode = X1,
-#                   Div = X2)
-#   # country codes. supporting table
-#   #countryCodes <- readr::read_csv(unz(temp, "nafo-21b-2010-16/country.txt")) |>
-#   nafosp <- readr::read_delim(unz(temp, "NAFO-21B-2010-18/species.txt"),delim = "\t",show_col_types = F) |>
-#     tibble::as_tibble() |>
-#     dplyr::rename(Species = "Longname") |>
-#     dplyr::select(Code,Abbreviation,Species) |>
-#     dplyr::filter(Code > 3)
-# 
-# 
-# 
-#   # read in 21A and join with division table and species table
-#   nafo <- readr::read_csv(pathToFiles,show_col_types = F) |>
-#     dplyr::left_join(divisions,by = c("Division"="Div")) |>
-#     dplyr::rename(SpeciesName = `Species Name`,
-#                   MT = `Metric Tonnes`) |>
-#     tidyr::separate(col = SpeciesName,into=c("Species","Abbreviation"),sep=" - ") |>
-#     dplyr::filter(!grepl("USA",Country)) |>
-#     dplyr::filter(AreaCode %in% neusAreaCodes$AreaCode) |>
-#     dplyr::left_join(neusAreaCodes,by = "AreaCode") |>
-#     dplyr::left_join(nafosp, by = c("Abbreviation","Species")) |>
-#     dplyr::group_by(Year,EPU,Species,Code,Abbreviation) |>
-#     dplyr::summarise(MT = sum(MT,na.rm = T),
-#                      .groups = "drop")
-# 
-# 
-#   if (isplot) {
-#     aggnafo <- nafo |>
-#       dplyr::group_by(Year,EPU) |>
-#       dplyr::summarise(MT = sum(MT),
-#                        .groups = "drop")
-#     p <- ggplot2::ggplot(data=aggnafo) +
-#       ggplot2::geom_line(ggplot2::aes(x=Year,y=MT,color= EPU))
-# 
-# 
-#     print(p)
-#   }  else {
-#     p = NULL
-#   }
-# 
-# 
-#   return(list(data=nafo,plot = p))
-# }
-
-
-# get_nafo_21a_soe in tidyverse ---------------
-get_nafo_21a_soe_data <- function(plot_summary = FALSE, staticPath = NULL) {
+process_nafo_catch_data <- function(path_to_files = NULL, create_plot = FALSE) {
   
-  # --- Input Validation ---
-  if (is.null(staticPath)) {
-    stop("`staticPath` must be specified. Please provide the full path to the NAFO 21A catch data CSV file.")
-  }
-  if (!file.exists(staticPath)) {
-    stop(paste0("NAFO 21A catch data file not found: '", staticPath, "'."))
-  }
-  if (!is.logical(plot_summary) || length(plot_summary) != 1) {
-    stop("`plot_summary` must be a single logical value (TRUE/FALSE).")
+  # 1. Input Validation ----
+  if (is.null(path_to_files)) {
+    stop("Error: Please provide a valid file path for the NAFO 21A catch data via the 'path_to_files' argument.")
   }
   
-  #  Define EPU to NAFO Area Code Mapping (using tibble) ----
-  # Using snake_case for consistency
-  neus_area_codes <- tibble::tibble(
-    EPU = c("SS", "GOM", "GB", "MAB", "GB", "GB", "GB", "MAB", "MAB", "MAB"),
-    AreaCode = c(47, 51:56, 61:63)
+  # 2. Define Helper Data and Constants ----
+  # Map NAFO division codes to corresponding Ecological Production Units (EPUs)
+  epu_division_map <- tibble::tribble(
+    ~EPU,   ~AreaCode,
+    "SS",   47,
+    "GOM",  51, "GOM", 52, "GOM", 53, "GOM", 54, "GOM", 55, "GOM", 56,
+    "GB",   61, "GB", 62, "GB", 63,
+    "MAB",  61, "MAB", 62, "MAB", 63
   )
   
-  #  Download and Read NAFO Supporting Data ----
-  # WARNING: Direct download from URL can affect reproducibility if URL changes
-  # or content is updated. For strict reproducibility, consider downloading
-  # these files once and storing them locally in `data-raw/` under version control.
+  # 3. Download and Read NAFO Supporting Data ----
+ # Will want a hard copy at some point for reproducibility
+  # a change in URL would break this script currently
   nafo_zip_url <- "https://www.nafo.int/Portals/0/Stats/nafo-21b-2010-18.zip"
   temp_zip_file <- tempfile(fileext = ".zip")
   
@@ -167,7 +102,7 @@ get_nafo_21a_soe_data <- function(plot_summary = FALSE, staticPath = NULL) {
   unlink(file.path(unzip_dir, c("divisions.txt", "species.txt"))) # Clean up extracted files
   
   
-  #  Read and Process NAFO 21A Catch Data ----
+  #  4. Read and Process NAFO 21A Catch Data ----
   nafo_catch_data <- readr::read_csv(input_path_to_files, show_col_types = FALSE) |>
     dplyr::left_join(divisions, by = c("Division" = "Div")) |>
     dplyr::rename(SpeciesName = `Species Name`, MT = `Metric Tonnes`) |>
@@ -180,7 +115,7 @@ get_nafo_21a_soe_data <- function(plot_summary = FALSE, staticPath = NULL) {
     dplyr::summarise(MT = sum(MT, na.rm = TRUE), .groups = "drop") |>
     dplyr::arrange(Year, EPU, Species) # Order for consistent output
   
-  #  Generate Plot (if requested) ----
+  # 5. Generate Plot (if requested) ----
   p_output <- NULL
   if (plot_summary) {
     agg_nafo_for_plot <- nafo_catch_data |>
@@ -198,929 +133,269 @@ get_nafo_21a_soe_data <- function(plot_summary = FALSE, staticPath = NULL) {
       ggplot2::theme_minimal()
   }
   
-  #  Return Results ----
+  #  6. Return Results ----
   return(list(data = nafo_catch_data, plot = p_output))
 }
 
 
+
+# create_comdat -------------------
+
+# 
+# Helper Functions
+# 
+
+#' Load and Prepare Menhaden Data
+#'
+#' @param menhaden_path Path to the menhadenEOF.rds file.
+#' @return A tibble of menhaden data formatted to match comland data.
+
+load_menhaden_data <- function(menhaden_path) {
+  readRDS(menhaden_path) |>
+    as_tibble() |>
+    tidyr::pivot_longer(
+      cols = c(MABcatch, GOMcatch),
+      names_to = "EPU",
+      values_to = "SPPLIVMT"
+    ) |>
+    dplyr::mutate(
+      EPU = sub("catch", "", EPU),
+      YEAR = year,
+      NESPP3 = 221, # Menhaden species code
+      NEGEAR = 0,
+      UTILCD = dplyr::case_when(EPU == "MAB" ~ 9, EPU == "GOM" ~ 7, TRUE ~ NA_real_),
+      SPPVALUE = 0,
+      US = TRUE
+    ) |>
+    dplyr::select(YEAR, EPU, NESPP3, SPPLIVMT, SPPVALUE, NEGEAR, UTILCD, US)
+}
+
+
+#' Summarize Commercial Metrics in Multiple Ways
+#'
+#' Core helper function to calculate total, species-group, and managed-status
+#' metrics for a given value (e.g., landings or revenue).
+#'
+#' @param data The input tibble (e.g., all data, US-only data).
+#' @param value_col The unquoted column name to summarize (SPPLIVMT or SPPVALUE).
+#' @param metric_name A string describing the metric (e.g., "Landings", "Revenue").
+#' @param unit_name A string for the units (e.g., "metric tons", "US dollars").
+#' @return A tibble containing all summarized metrics.
+
+summarize_metrics <- function(data, value_col, metric_name, unit_name) {
+  
+  # 1. Total metric by EPU
+  total_summary <- data |>
+    dplyr::group_by(YEAR, EPU) |>
+    dplyr::summarise(Value = sum({{ value_col }}, na.rm = TRUE), .groups = "drop") |>
+    dplyr::mutate(Var = metric_name)
+  
+  # 2. Metric by SOE Species Group
+  group_summary <- data |>
+    dplyr::group_by(YEAR, EPU, SOE.24) |>
+    dplyr::summarise(Value = sum({{ value_col }}, na.rm = TRUE), .groups = "drop") |>
+    dplyr::mutate(Var = paste(SOE.24, metric_name))
+  
+  # 3. Metric by Management Status
+  managed_summary <- data |>
+    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
+    dplyr::summarise(Value = sum({{ value_col }}, na.rm = TRUE), .groups = "drop") |>
+    dplyr::mutate(Var = paste(SOE.24, Fed.Managed, "managed species -", metric_name))
+  
+  # Combine all summaries into one tibble
+  dplyr::bind_rows(total_summary, group_summary, managed_summary) |>
+    dplyr::rename(Time = YEAR, Region = EPU) |>
+    dplyr::mutate(Units = unit_name, Source = "Commercial Fisheries Database (comland)") |>
+    dplyr::select(Time, Region, Var, Value, Units, Source) |>
+    dplyr::distinct()
+}
+
+
+# 
+# Main Function
+# 
+
 #' Create data for ecodata::comdat submission
-#' SOE revenue data
-#'#SML
-#'Used for 2023 SOE after Sean Left
-#' Original file name = Revenue_landings_pull.r
 #'
-#' @param inputPathSpecies Character string. Full path to the species list data pull rds file.
-#' @param soe_report_year Numeric. The State of the Ecosystem report year. Used for file naming.
-#' @param end_year Numeric. The last year of data to include in the pull and calculations.
-#' @param save_to_file Logical. If `TRUE`, the processed data will be saved as
-#'   an RDS and RData file in `data/` and `data-raw/` respectively, named
-#'   `Commercial_data_pull_YY.rds/RData` where YY is the last two digits of `soe_report_year`.
-#'   If `FALSE`, the data frame is returned.
+#' Processes and combines commercial landings, NAFO foreign landings, and
+#' Menhaden data to produce a summary of landings and revenue metrics for the
+#' State of the Ecosystem report.
 #'
-#' @importFrom dplyr rename select mutate filter group_by summarise arrange distinct left_join bind_rows
-#' @importFrom tidyr expand_grid
+#' @param channel An ODBC database connection object.
+#' @param report_year The year of the SOE report (e.g., 2025).
+#' @param end_year The last year of data to include.
+#' @param nafo_path Path to the NAFO 21A CSV file.
+#' @param species_list_path Path to the 'SOE_species_list_24.RData' file.
+#' @param menhaden_path Path to the 'menhadenEOF.rds' file.
+#' @param save_to_file Boolean. If TRUE, saves the final output to disk.
+#'
+#' @return A single tibble containing all summarized commercial data.
+#' 
+#' #' @importFrom dplyr bind_rows case_when distinct filter group_by left_join mutate rename select summarise tribble
+#' @importFrom tidyr pivot_longer
+#' @importFrom tibble as_tibble
 #' @importFrom here here
-#' @importFrom readr read_csv
+#' @importFrom data.table as.data.table
 #' @importFrom comlandr get_comland_data
-#'
-#' @examples
-#' \dontrun{
-#' # Example usage (requires a database connection and raw data files)
-#' #
-#' # # To create and save the data for the 2025 SOE report, up to data for 2024
-#' # create_comdat(
-#' #   channel = channel,
-#' #   soe_report_year = 2025,
-#' #   end_year = 2024,
-#' #   save_to_file = TRUE
-#' # )
-#' #
-#' # # To just return the data frame
-#' # com_data <- create_comdat_pipeline(
-#' #   channel = channel,
-#' #   soe_report_year = 2025,
-#' #   end_year = 2024,
-#' #   save_to_file = FALSE
-#' # )
-#' }
-#'
-#' @return A `tibble` data frame containing the processed commercial data,
-#'   or invisibly saves the data to files if `save_to_file = TRUE`.
+#' @importFrom usethis use_data
 #'
 #' @export
 
-# # using data.table ----------------------
-# # copied code from https://github.com/NOAA-EDAB/SOE_data/blob/main/R/create_comdat.R
-# 
-# create_comdat <- function(channel, SOEreportYear, end.year, saveToFile = F) {
-#   
-#   
-#  Set up EPU definitions
-#   gom <- data.table(AREA = c(500, 510, 512:515), EPU = 'GOM')
-#   gb  <- data.table(AREA = c(521:526, 551, 552, 561, 562), EPU = 'GB')
-#   mab <- data.table(AREA = c(537, 539, 600, 612:616, 621, 622, 625, 626, 631, 632),
-#                     EPU = 'MAB')
-#   ss  <- data.table(AREA = c(463:467, 511), EPU = 'SS')
-#   
-#   epuAreas <- rbindlist(list(gom, gb, mab, ss))
-#   epuAreas[, NESPP3 := 1]
-#   epuAreas[, MeanProp := 1]
-#   
-#   
-#   #after switch unknowns to start of code
-#   comland <- comlandr::get_comland_data(channel, filterByYear = 1964:end.year,
-#                                         refYear = end.year, refMonth = 1, aggArea = T,
-#                                         userAreas = epuAreas, applyProp = F, aggGear = F,
-#                                         unkVar = c('MONTH', 'NEGEAR', 'AREA'),
-#                                         knStrata = c('HY', 'QY', 'MONTH', 'NEGEAR', 'TONCL2',
-#                                                      'AREA'))
-#   ## Remove menhaden
-#   comland$comland <- comland$comland[NESPP3 != 221, ]
-#   saveRDS(comland,here::here("data",SOEreportYear,"comlandpull_comdatbennet.rds"))
-#   #comland <- readRDS(here::here("data",SOEreportYear,""))
-#   
-#   if(0) {
-#     comland <- readRDS(here::here("data/pre2025/comlandtemp.rds"))
-#   }
-#   # Add Herring here
-#   # epuAreasHerring <- epuAreas
-#   # epuAreasHerring$NESPP3 <- NULL
-#   # epuAreasHerring$MeanProp <- NULL
-#   # herring2022 <- readr::read_csv(here::here("data-raw/maine_herring_catch_2022.csv")) |>
-#   #   dplyr::select(Year,Month,STATAREA,GEAR_CODE,MT) |>
-#   #   dplyr::rename(YEAR = Year,
-#   #                 MONTH = Month,
-#   #                 AREA = STATAREA,
-#   #                 NEGEAR = GEAR_CODE,
-#   #                 SPPLIVMT = MT) |>
-#   #   dplyr::left_join(epuAreasHerring,by="AREA") |>
-#   #   dplyr::select(-AREA) |>
-#   #   dplyr::mutate(TONCL2 = 30,
-#   #                 NESPP3 = 168,
-#   #                 UTILCD = 0,
-#   #                 MARKET_CODE = "UN",
-#   #                 MESHCAT = "LG",
-#   #                 US = "TRUE",
-#   #                 SPPVALUE = NA) |>
-#   #   dplyr::arrange(YEAR, MONTH, NEGEAR, TONCL2, NESPP3, UTILCD, MARKET_CODE, MESHCAT,   US,   EPU,     SPPLIVMT,     SPPVALUE)
-#   #
-#   # comland$comland <- rbind(comland$comland,herring2022)
-#   
-#   # Add Nafo 21A data from 2019 - 2022 to total landings only
-#   a <- get_nafo_21a_soe(pathToFiles = here::here("data/pre2025/NAFO21A_2023.csv"),isplot = F)
-#   
-#   nafolandings2019plus <- a$data |>
-#     dplyr::filter(Year > 2018,!(EPU == "SS")) |>
-#     dplyr::group_by(Year,EPU) |>
-#     dplyr::summarise(V1 = sum(MT),
-#                      .groups = "drop") |>
-#     dplyr::mutate(Fed.Managed = NA,
-#                   SOE.24 = "Other") |>
-#     dplyr::rename(YEAR = Year) |>
-#     dplyr::relocate(YEAR,EPU,SOE.24,Fed.Managed,V1)
-#   
-#   
-#   # remove eastern oyster. but only because the assigning algorithm doesnt work as expected
-#   comland$comland <- comland$comland[NESPP3 != 789, ]
-#   
-#   # intermediate SAVE
-#   #save(comland, file = here::here('data-raw', 'comland.rda'))
-#   
-#   # If using existing data
-#   #load(here::here('data-raw', 'comland_oldway.rda'))
-#   load(here::here('data-raw', 'SOE_species_list_24.RData'))
-#   
-#   # Extract just data
-#   comland.data <- comland$comland
-#   comland.data[, NESPP3 := as.numeric(NESPP3)]
-#   
-#   #Assign unknown EPU to Other
-#   comland.data[is.na(EPU), EPU := 'OTHER']
-#   
-#   #Fix scallops in foreign landings to be meat weight
-#   comland.data[NESPP3 == 800 & US == F, SPPLIVMT := SPPLIVMT / 8.33]
-#   
-#   #Add Menhaden directly
-#   menhaden <- data.table::as.data.table(readRDS(here::here('data-raw/data', 'menhadenEOF.rds')))
-#   #Get in same format as comland
-#   #Mid-Atlantic
-#   mid.men <- menhaden[, list(year, MABcatch)]
-#   data.table::setnames(mid.men, c('year', 'MABcatch'), c('YEAR', 'SPPLIVMT'))
-#   mid.men[, MONTH := 1]
-#   mid.men[, NESPP3 := 221]
-#   mid.men[, NEGEAR := 0] #Double check
-#   mid.men[, TONCL2 := NA] #Double check
-#   mid.men[, EPU := 'MAB']
-#   mid.men[, UTILCD := 9]
-#   mid.men[, MARKET_CODE := 'UN']
-#   mid.men[, MESHCAT := NA]
-#   mid.men[, SPPVALUE := 0]
-#   mid.men[, US := T]
-#   comland.data <- data.table::rbindlist(list(comland.data, mid.men), use.names = T)
-#   
-#   #GOM
-#   gom.men <- menhaden[, list(year, GOMcatch)]
-#   data.table::setnames(gom.men, c('year', 'GOMcatch'), c('YEAR', 'SPPLIVMT'))
-#   gom.men[, NESPP3 := 221]
-#   gom.men[, MONTH := 1]
-#   gom.men[, NEGEAR := 0]
-#   gom.men[, TONCL2 := NA]
-#   gom.men[, EPU := 'GOM']
-#   gom.men[, UTILCD := 7]
-#   gom.men[, MARKET_CODE := 'UN']
-#   gom.men[, MESHCAT := NA]
-#   gom.men[, SPPVALUE := 0]
-#   gom.men[, US := T]
-#   comland.data <- data.table::rbindlist(list(comland.data, gom.men), use.names = T)
-#   
-#   #Aggregate by EBFM codes
-#   comland.agg <- merge(comland.data, unique(species[!is.na(NESPP3), list(NESPP3, SOE.24, Fed.Managed)]),
-#                        by = 'NESPP3', all.x = T)
-#   
-#   #Fix NA codes
-#   comland.agg[is.na(SOE.24), SOE.24 := 'Other']
-#   
-#   
-#   
-#   #Landings
-#   landings <- comland.agg[, sum(SPPLIVMT, na.rm = T),
-#                           by = c('YEAR', 'EPU', 'SOE.24', 'Fed.Managed')]
-#   #add nafo to landings
-#   landings <- rbind(landings,nafolandings2019plus) |>
-#     dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
-#     dplyr::summarise(V1 = sum(V1),
-#                      .groups = "drop") |>
-#     data.table::as.data.table()
-#   
-#   
-#   landings[, Total := sum(V1, na.rm = T), by = c('YEAR', 'EPU', 'SOE.24')]
-#   landings[, Prop.managed := V1 / Total]
-#   landings[, Total.all := sum(V1, na.rm = T), by = c('YEAR', 'EPU')]
-#   
-#   #US Landings only - affects Georges Bank
-#   land.us <- comland.agg[US == T, sum(SPPLIVMT, na.rm = T),
-#                          by = c('YEAR', 'EPU', 'SOE.24', 'Fed.Managed')]
-#   land.us[, Total := sum(V1, na.rm = T), by = c('YEAR', 'EPU', 'SOE.24')]
-#   land.us[, Prop.managed := V1 / Total]
-#   land.us[, Total.all := sum(V1, na.rm = T), by = c('YEAR', 'EPU')]
-#   
-#   #Total
-#   land.tot <- copy(landings)
-#   land.tot[, Var := paste('Landings')]
-#   setnames(land.tot, c('YEAR', 'EPU', 'Total.all'), c('Time', 'Region', 'Value'))
-#   land.tot[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total') := NULL]
-#   land.tot[, Units  := 'metric tons']
-#   land.tot[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(land.tot, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   land.tot <- unique(land.tot)
-#    
-#   #Total - US only
-#   land.tot.us <- copy(land.us)
-#   land.tot.us[, Var := paste('Landings - US only')]
-#   setnames(land.tot.us, c('YEAR', 'EPU', 'Total.all'), c('Time', 'Region', 'Value'))
-#   land.tot.us[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total') := NULL]
-#   land.tot.us[, Units  := 'metric tons']
-#   land.tot.us[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(land.tot.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   land.tot.us <- unique(land.tot.us)
-#   
-#   #Total agg
-#   land.agg <- copy(landings)
-#   land.agg[, Var := paste(SOE.24, 'Landings')]
-#   setnames(land.agg, c('YEAR', 'EPU', 'Total'), c('Time', 'Region', 'Value'))
-#   land.agg[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total.all') := NULL]
-#   land.agg[, Units  := 'metric tons']
-#   land.agg[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(land.agg, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   land.agg <- unique(land.agg)
-#   
-#   #Total - US only 
-#   land.agg.us <- copy(land.us)
-#   land.agg.us[, Var := paste(SOE.24, 'Landings - US only')]
-#   setnames(land.agg.us, c('YEAR', 'EPU', 'Total'), c('Time', 'Region', 'Value'))
-#   land.agg.us[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total.all') := NULL]
-#   land.agg.us[, Units  := 'metric tons']
-#   land.agg.us[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(land.agg.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   land.agg.us <- unique(land.agg.us)
-#   
-#   #Landings managed 
-#   land.man <- copy(landings)
-#   land.man[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   land.man[, Var := paste(SOE.24, Fed.Managed, 'managed species - Landings weight')]
-#   setnames(land.man, c('YEAR', 'EPU', 'V1'), c('Time', 'Region', 'Value'))
-#   land.man[, c('SOE.24', 'Prop.managed', 'Total', 'Fed.Managed', 'Total.all') := NULL]
-#   land.man[, Units  := 'metric tons']
-#   land.man[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(land.man, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   
-#   #Landings managed 
-#   land.man.us <- copy(land.us)
-#   land.man.us[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   land.man.us[, Var := paste(SOE.24, Fed.Managed, 'managed species - Landings weight - US only')]
-#   setnames(land.man.us, c('YEAR', 'EPU', 'V1'), c('Time', 'Region', 'Value'))
-#   land.man.us[, c('SOE.24', 'Prop.managed', 'Total', 'Fed.Managed', 'Total.all') := NULL]
-#   land.man.us[, Units  := 'metric tons']
-#   land.man.us[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(land.man.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   
-#   # #Proportion managed 
-#   # land.prop <- copy(landings)
-#   # land.prop[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   # land.prop[, Var := paste(SOE.24, Fed.Managed, 'managed species - Landings prop')]
-#   # setnames(land.prop, c('YEAR', 'EPU', 'Prop.managed'), c('Time', 'Region', 'Value'))
-#   # land.prop[, c('SOE.24', 'V1', 'Total', 'Fed.Managed') := NULL]
-#   # land.prop[, Units  := 'proportion']
-#   # land.prop[, Source := 'Commercial Fisheries Database (comland)']
-#   # setcolorder(land.prop, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   #
-#   # #Proportion managed 
-#   # land.prop.us <- copy(land.us)
-#   # land.prop.us[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   # land.prop.us[, Var := paste(SOE.24, Fed.Managed, 'managed species - Landings prop - US only')]
-#   # setnames(land.prop.us, c('YEAR', 'EPU', 'Prop.managed'), c('Time', 'Region', 'Value'))
-#   # land.prop.us[, c('SOE.24', 'V1', 'Total', 'Fed.Managed') := NULL]
-#   # land.prop.us[, Units  := 'proportion']
-#   # land.prop.us[, Source := 'Commercial Fisheries Database (comland)']
-#   # setcolorder(land.prop.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   
-#   #Revenue 
-#   revenue <- comland.agg[, sum(SPPVALUE, na.rm = T),
-#                          by = c('YEAR', 'EPU', 'SOE.24', 'Fed.Managed')]
-#   revenue[, Total := sum(V1, na.rm = T), by = c('YEAR', 'EPU', 'SOE.24')]
-#   revenue[, Prop.managed := V1 / Total]
-#   revenue[, Total.all := sum(V1, na.rm = T), by = c('YEAR', 'EPU')]
-#   
-#   #Revenue - US only 
-#   revenue.us <- comland.agg[US == T, sum(SPPVALUE, na.rm = T),
-#                             by = c('YEAR', 'EPU', 'SOE.24', 'Fed.Managed')]
-#   revenue.us[, Total := sum(V1, na.rm = T), by = c('YEAR', 'EPU', 'SOE.24')]
-#   revenue.us[, Prop.managed := V1 / Total]
-#   revenue.us[, Total.all := sum(V1, na.rm = T), by = c('YEAR', 'EPU')]
-#   
-#   #Total
-#   rev.tot <- copy(revenue)
-#   rev.tot[, Var := paste('Revenue')]
-#   setnames(rev.tot, c('YEAR', 'EPU', 'Total.all'), c('Time', 'Region', 'Value'))
-#   rev.tot[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total') := NULL]
-#   rev.tot[, Units  := 'US dollars']
-#   rev.tot[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(rev.tot, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   rev.tot <- unique(rev.tot)
-#   
-#   #Total - US only
-#   rev.tot.us <- copy(revenue.us)
-#   rev.tot.us[, Var := paste('Revenue - US only')]
-#   setnames(rev.tot.us, c('YEAR', 'EPU', 'Total.all'), c('Time', 'Region', 'Value'))
-#   rev.tot.us[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total') := NULL]
-#   rev.tot.us[, Units  := 'US dollars']
-#   rev.tot.us[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(rev.tot.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   rev.tot.us <- unique(rev.tot.us)
-#   
-#   #Total agg 
-#   rev.agg <- copy(revenue)
-#   rev.agg[, Var := paste(SOE.24, 'Revenue')]
-#   setnames(rev.agg, c('YEAR', 'EPU', 'Total'), c('Time', 'Region', 'Value'))
-#   rev.agg[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total.all') := NULL]
-#   rev.agg[, Units  := 'US dollars']
-#   rev.agg[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(rev.agg, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   rev.agg <- unique(rev.agg)
-#   
-#   #Total - US only 
-#   rev.agg.us <- copy(revenue.us)
-#   rev.agg.us[, Var := paste(SOE.24, 'Revenue - US only')]
-#   setnames(rev.agg.us, c('YEAR', 'EPU', 'Total'), c('Time', 'Region', 'Value'))
-#   rev.agg.us[, c('SOE.24', 'V1', 'Prop.managed', 'Fed.Managed', 'Total.all') := NULL]
-#   rev.agg.us[, Units  := 'US dollars']
-#   rev.agg.us[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(rev.agg.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   rev.agg.us <- unique(rev.agg.us)
-#   
-#   #Revenue managed 
-#   rev.man <- copy(revenue)
-#   rev.man[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   rev.man[, Var := paste(SOE.24, Fed.Managed, 'managed species - Revenue')]
-#   setnames(rev.man, c('YEAR', 'EPU', 'V1'), c('Time', 'Region', 'Value'))
-#   rev.man[, c('SOE.24', 'Prop.managed', 'Total', 'Fed.Managed', 'Total.all') := NULL]
-#   rev.man[, Units  := 'US dollars']
-#   rev.man[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(rev.man, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   
-#   #Revenue managed - US only 
-#   rev.man.us <- copy(revenue.us)
-#   rev.man.us[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   rev.man.us[, Var := paste(SOE.24, Fed.Managed, 'managed species - Revenue - US only')]
-#   setnames(rev.man.us, c('YEAR', 'EPU', 'V1'), c('Time', 'Region', 'Value'))
-#   rev.man.us[, c('SOE.24', 'Prop.managed', 'Total', 'Fed.Managed', 'Total.all') := NULL]
-#   rev.man.us[, Units  := 'US dollars']
-#   rev.man.us[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(rev.man.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   
-#   # #Proportion managed 
-#   # rev.prop <- copy(revenue)
-#   # rev.prop[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   # rev.prop[, Var := paste(SOE.24, Fed.Managed, 'managed species - Revenue prop')]
-#   # setnames(rev.prop, c('YEAR', 'EPU', 'Prop.managed'), c('Time', 'Region', 'Value'))
-#   # rev.prop[, c('SOE.24', 'V1', 'Total', 'Fed.Managed') := NULL]
-#   # rev.prop[, Units  := 'proportion']
-#   # rev.prop[, Source := 'Commercial Fisheries Database (comland)']
-#   # setcolorder(rev.prop, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   #
-#   # #Proportion managed - US only 
-#   # rev.prop.us <- copy(revenue.us)
-#   # rev.prop.us[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   # rev.prop.us[, Var := paste(SOE.24, Fed.Managed, 'managed species - Revenue prop - US only')]
-#   # setnames(rev.prop.us, c('YEAR', 'EPU', 'Prop.managed'), c('Time', 'Region', 'Value'))
-#   # rev.prop.us[, c('SOE.24', 'V1', 'Total', 'Fed.Managed') := NULL]
-#   # rev.prop.us[, Units  := 'proportion']
-#   # rev.prop.us[, Source := 'Commercial Fisheries Database (comland)']
-#   # setcolorder(rev.prop.us, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   
-#   #Proportion of seafood
-#   util.code <- data.table(UTILCD = c(0, 2, 3, 4, 5, 7, 8, 9),
-#                           DESC = c('food fish or unknown',
-#                                    'aquaculture',
-#                                    'canned pet food',
-#                                    'Biomedical',
-#                                    'animal food',
-#                                    'bait',
-#                                    'industrial - other',
-#                                    'industrial - reduction'))
-#   seafood <- comland.agg[US == T & UTILCD == 0, sum(SPPLIVMT, na.rm = T),
-#                          by = c('YEAR', 'EPU', 'SOE.24', 'Fed.Managed', 'UTILCD')]
-#   seafood[is.na(Fed.Managed), Fed.Managed := 'Other']
-#   seafood[, Total := sum(V1, na.rm = T), by = c('YEAR', 'EPU', 'SOE.24')]
-#   seafood[, Total.all := sum(V1, na.rm = T), by = c('YEAR', 'EPU')]
-#   
-#   # for(icode in util.code[, UTILCD]){
-#   #   seafood <- seafood[UTILCD == icode, Var := paste(SOE.24, Fed.Managed,
-#   #                                                    'managed species used for',
-#   #                                                    util.code[UTILCD == icode, DESC])]
-#   # }
-#   # setnames(seafood, c('YEAR', 'EPU', 'V1'), c('Time', 'Region', 'Value'))
-#   # seafood[, c('SOE.24', 'UTILCD', 'Fed.Managed') := NULL]
-#   # seafood[, Units  := 'metric tons']
-#   # seafood[, Source := 'Commercial Fisheries Database (comland)']
-#   # setcolorder(seafood, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   
-#   #Seafood
-#   sea.tot <- copy(seafood)
-#   sea.tot[, Var := paste('Seafood Landings')]
-#   setnames(sea.tot, c('YEAR', 'EPU', 'Total.all'), c('Time', 'Region', 'Value'))
-#   sea.tot[, c('SOE.24', 'V1', 'Fed.Managed', 'Total', 'UTILCD') := NULL]
-#   sea.tot[, Units  := 'metric tons']
-#   sea.tot[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(sea.tot, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   sea.tot <- unique(sea.tot)
-#   
-#   sea.agg <- copy(seafood)
-#   sea.agg[, Var := paste(SOE.24, 'Seafood Landings')]
-#   setnames(sea.agg, c('YEAR', 'EPU', 'Total'), c('Time', 'Region', 'Value'))
-#   sea.agg[, c('SOE.24', 'V1', 'Fed.Managed', 'Total.all', 'UTILCD') := NULL]
-#   sea.agg[, Units  := 'metric tons']
-#   sea.agg[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(sea.agg, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   sea.agg <- unique(sea.agg)
-#   
-#   sea.man <- copy(seafood)
-#   sea.man[, Var := paste(SOE.24, Fed.Managed, 'managed species - Seafood Landings')]
-#   setnames(sea.man, c('YEAR', 'EPU', 'V1'), c('Time', 'Region', 'Value'))
-#   sea.man[, c('SOE.24', 'Total', 'Fed.Managed', 'Total.all', 'UTILCD') := NULL]
-#   sea.man[, Units  := 'metric tons']
-#   sea.man[, Source := 'Commercial Fisheries Database (comland)']
-#   setcolorder(sea.man, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
-#   sea.man <- unique(sea.man)
-#   
-#   commercial <- rbindlist(list(land.tot, rev.tot, sea.tot,
-#                                land.agg.us, land.agg, rev.agg, sea.agg,
-#                                land.man.us, land.man, rev.man, sea.man))
-#   
-#   if (saveToFile)  {
-#     yr <- substring(SOEreportYear,3,4)
-#     saveRDS(commercial, file = here::here("data-raw", paste0("Commercial_data_pull_",yr,".rds")))
-#     save(commercial, file = here::here("data", paste0("Commercial_data_pull_",yr,".rds")))
-#   }
-#   
-#   return(commercial)
-#   
-# }
+create_commercial_data_summary <- function(channel,
+                                           report_year,
+                                           end_year,
+                                           nafo_path,
+                                           species_list_path,
+                                           menhaden_path,
+                                           save_to_file = FALSE) {
+  
+  # 1. Define EPU Areas for comlandr ----
+  epu_areas <- dplyr::tribble(
+    ~AREA, ~EPU,
+    500, "GOM", 510, "GOM", 512, "GOM", 513, "GOM", 514, "GOM", 515, "GOM",
+    521, "GB",  522, "GB",  523, "GB",  524, "GB",  525, "GB",  526, "GB",
+    551, "GB",  552, "GB",  561, "GB",  562, "GB",
+    537, "MAB", 539, "MAB", 600, "MAB", 612, "MAB", 613, "MAB", 614, "MAB",
+    615, "MAB", 616, "MAB", 621, "MAB", 622, "MAB", 625, "MAB", 626, "MAB",
+    631, "MAB", 632, "MAB",
+    463, "SS",  464, "SS",  465, "SS",  466, "SS",  467, "SS",  511, "SS"
+  ) |>
+    dplyr::mutate(NESPP3 = 1, MeanProp = 1) |>
+    data.table::as.data.table() # comlandr requires a data.table
+  
+  # 2. Load and Process All Data Sources ----
+  
+  # Load commercial data from database
+  comland_raw <- comlandr::get_comland_data(
+    channel = channel, filterByYear = 1964:end_year, refYear = end_year,
+    userAreas = epu_areas, unkVar = c('MONTH', 'NEGEAR', 'AREA'),
+    knStrata = c('HY', 'QY', 'MONTH', 'NEGEAR', 'TONCL2', 'AREA')
+  )$comland |>
+    tibble::as_tibble() |>
+    dplyr::filter(NESPP3 != 221, NESPP3 != 789) # Remove Menhaden and Eastern Oyster
+  
+  # Load NAFO foreign landings
+  nafo_landings <- get_nafo_21a_soe(pathToFiles = nafo_path, isplot = FALSE)$data |>
+    dplyr::filter(Year > 2018, EPU != "SS") |>
+    dplyr::group_by(Year, EPU) |>
+    dplyr::summarise(SPPLIVMT = sum(MT, na.rm = TRUE), .groups = "drop") |>
+    dplyr::mutate(
+      SOE.24 = "Other", Fed.Managed = NA, US = FALSE, SPPVALUE = 0,
+      NESPP3 = 999 # Assign a code for "other foreign landings"
+    ) |>
+    dplyr::rename(YEAR = Year)
+  
+  # Load Menhaden data
+  menhaden_data <- load_menhaden_data(menhaden_path)
+  
+  # Load species list for grouping
+  load(species_list_path) # Loads object `species`
+  species_codes <- species |>
+    tibble::as_tibble() |>
+    dplyr::select(NESPP3, SOE.24, Fed.Managed) |>
+    dplyr::distinct()
+  
+  # 3. Combine and Clean Base Data ----
+  base_data <- dplyr::bind_rows(comland_raw, menhaden_data, nafo_landings) |>
+    dplyr::mutate(NESPP3 = as.numeric(NESPP3)) |>
+    dplyr::left_join(species_codes, by = "NESPP3") |>
+    dplyr::mutate(
+      EPU = ifelse(is.na(EPU), "OTHER", EPU),
+      SOE.24 = ifelse(is.na(SOE.24), "Other", SOE.24),
+      Fed.Managed = ifelse(is.na(Fed.Managed), "Other", Fed.Managed),
+      # Correct scallop weight for foreign landings
+      SPPLIVMT = ifelse(NESPP3 == 800 & !US, SPPLIVMT / 8.33, SPPLIVMT)
+    )
+  
+  # 4. Generate All Summaries ----
+  
+  # Create data subsets for specific summaries
+  us_data <- dplyr::filter(base_data, US)
+  seafood_data <- dplyr::filter(us_data, UTILCD %in% c(0, NA)) # Food fish or unknown
+  
+  # Calculate metrics for landings and revenue
+  landings <- summarize_metrics(base_data, SPPLIVMT, "Landings", "metric tons")
+  landings_us <- summarize_metrics(us_data, SPPLIVMT, "Landings - US only", "metric tons")
+  
+  revenue <- summarize_metrics(base_data, SPPVALUE, "Revenue", "US dollars")
+  revenue_us <- summarize_metrics(us_data, SPPVALUE, "Revenue - US only", "US dollars")
+  
+  # Calculate metrics for seafood-only landings
+  seafood <- summarize_metrics(seafood_data, SPPLIVMT, "Seafood Landings", "metric tons")
+  
+  # 5. Combine Final Results and Save ----
+  commercial_summary <- dplyr::bind_rows(
+    landings, landings_us,
+    revenue, revenue_us,
+    seafood
+  )
+  
+  if (save_to_file) {
+    yr <- substring(report_year, 3, 4)
+    save_path <- here::here("data-raw", paste0("Commercial_data_pull_", yr, ".rds"))
+    saveRDS(commercial_summary, file = save_path)
+    # Also save to the data/ folder for package use
+    usethis::use_data(commercial_summary, overwrite = TRUE)
+  }
+  
+  return(commercial_summary)
+}
+
+# get_comdat ------------------
 
 
 
-#' Commercial fisheries data for the NES.
+#' Process Commercial Fisheries Data
 #'
-#' This function loads raw commercial fisheries data, cleans and formats it,
-#' and adds relevant metadata. It prepares the data to match
-#' the structure of `ecodata` package objects.
+#' @description
+#' Loads and cleans commercial fisheries data derived from the Commercial
+#' Fisheries Database Biological Sample. The function selects and renames
+#' relevant columns, sets data attributes for metadata, and provides an
+#' option to save the cleaned data.
+#' Using as a template: https://github.com/NOAA-EDAB/ecodata/blob/dev/data-raw/get_comdat.R
+#' 
+#' #' @param save_clean A boolean value. If `TRUE`, the cleaned data frame is saved
+#'   as `comdat.rda` in the `data/` directory using `usethis::use_data()`.
+#'   If `FALSE` (the default), the function returns the data frame to the console.
 #'
-#' @param input_path_commercial_comdat Character string. Full path to the comlandr data pull rds file
-#' @param inputPathSpecies Character string. Full path to the species list data pull rds file
-#' @param save_clean Logical. If `TRUE`, the processed `comdat` object will be
-#'   saved into the `data/` directory of the R package (assuming a package
-#'   structure) using `usethis::use_data`. If `FALSE`, the processed data
-#'   frame is returned.
-#'   
+#' @return If `save_clean` is `FALSE`, returns a tibble with the cleaned
+#'   commercial data. If `TRUE`, the function saves the data and returns
+#'   nothing.
+#'
+#' @section Source:
+#' More information about these data are available at
+#' https://noaa-edab.github.io/tech-doc/comdat.html
+#'
 #' @importFrom dplyr rename select arrange
 #' @importFrom here here
 #' @importFrom tibble as_tibble
 #' @importFrom usethis use_data
 #'
-#' @examples
-#' \dontrun{
-#' # Assuming input_path_commercial_comdat has been pulled by get_commercial_data.R
-#' # within your project, and renv is initialized.
-#'
-#' # Create the clean comdat data set
-#' # get_comdat(
-#' #   input_path_commercial_comdat <- "/home/<user>/EDAB_Dev/beet/commercial_comdat.rds",
-#' #   save_clean = TRUE
-#' # )
-#'
-#' # Or, to return the data frame without saving:
-#' # comdat_df <- get_comdat(
-#' #   input_path_commercial_comdat <- "/home/<user>/EDAB_Dev/beet/commercial_comdat.rds",
-#' #   save_clean = FALSE
-#' # )
-#' }
-#'
-#' @return A `tibble` data frame containing the processed commercial data,
-#'   or invisibly saves the data to `data/comdat.rda` if `save_clean = TRUE`.
-#'
 #' @export
 
-
-
-
-# create_comdat in tidyverse ----------------------
-create_comdat <- function(soe_report_year, end_year, save_to_file = FALSE) {
+get_comdat <- function(save_clean = FALSE) {
   
-  # --- Input Validation ---
-  if (!is.numeric(soe_report_year) || length(soe_report_year) != 1) {
-    stop("`soe_report_year` must be a single numeric value.")
-  }
-  if (!is.numeric(end_year) || length(end_year) != 1) {
-    stop("`end_year` must be a single numeric value.")
-  }
+  # 1. Define File Paths and Constants ----
+  raw_data_dir <- here::here("data-raw")
+  comdat_rdata_file <- "Commercial_data_pull_25.RData"
   
-  # Define EPU areas (using tibble for consistency) ----
-  epu_areas <- dplyr::bind_rows(
-    tibble::tibble(AREA = c(500, 510, 512:515), EPU = 'GOM'),
-    tibble::tibble(AREA = c(521:526, 551, 552, 561, 562), EPU = 'GB'),
-    tibble::tibble(AREA = c(537, 539, 600, 612:616, 621, 622, 625, 626, 631, 632), EPU = 'MAB'),
-    tibble::tibble(AREA = c(463:467, 511), EPU = 'SS')
-  ) |> 
-    dplyr::mutate(NESPP3 = 1, MeanProp = 1)
+  # 2. Load Raw Data ----
+  # The `load()` function loads the object `comdat` into the environment
+  load(file.path(raw_data_dir, comdat_rdata_file))
   
-  
-  # Integrate NAFO 21A Data ----
-  nafo_21a_raw_path <- here::here("data", "pre2025", "NAFO21A_2023.csv") # Assuming this path is static
-  if (!file.exists(nafo_21a_raw_path)) {
-    stop(paste0("NAFO 21A data file not found: '", nafo_21a_raw_path, "'."))
-  }
-  nafo_data_pull <- get_nafo_21a_soe(pathToFiles = nafo_21a_raw_path, isplot = FALSE)
-  
-  nafo_landings_2019_plus <- nafo_data_pull$data |>
-    dplyr::filter(Year > 2018, !(EPU == "SS")) |>
-    dplyr::group_by(Year, EPU) |>
-    dplyr::summarise(V1 = sum(MT), .groups = "drop") |>
-    dplyr::mutate(Fed.Managed = NA, SOE.24 = "Other") |>
-    dplyr::rename(YEAR = Year) |>
-    dplyr::relocate(YEAR, EPU, SOE.24, Fed.Managed, V1)
-  
-  
-  # Add Menhaden Data ----
-  menhaden_raw_path <- here::here("data-raw", "data", "menhadenEOF.rds") # Check this path if it's correct
-  if (!file.exists(menhaden_raw_path)) {
-    stop(paste0("Menhaden data file not found: '", menhaden_raw_path, "'."))
-  }
-  menhaden_data <- readRDS(menhaden_raw_path) |>
-    tibble::as_tibble() # Convert to tibble from data.table
-  
-  # Process Mid-Atlantic Menhaden
-  mid_men <- menhaden_data |>
-    dplyr::select(YEAR = year, SPPLIVMT = MABcatch) |>
-    dplyr::mutate(
-      MONTH = 1,
-      NESPP3 = 221,
-      NEGEAR = 0, # Double check this value
-      TONCL2 = NA_integer_, # Double check this value, use NA_integer_ for integer NA
-      EPU = 'MAB',
-      UTILCD = 9,
-      MARKET_CODE = 'UN',
-      MESHCAT = NA_character_, # Use NA_character_ for character NA
-      SPPVALUE = 0,
-      US = TRUE
-    )
-  
-  # Process GOM Menhaden
-  gom_men <- menhaden_data |>
-    dplyr::select(YEAR = year, SPPLIVMT = GOMcatch) |>
-    dplyr::mutate(
-      MONTH = 1,
-      NESPP3 = 221,
-      NEGEAR = 0,
-      TONCL2 = NA_integer_,
-      EPU = 'GOM',
-      UTILCD = 7,
-      MARKET_CODE = 'UN',
-      MESHCAT = NA_character_,
-      SPPVALUE = 0,
-      US = TRUE
-    )
-  
-  # Combine all comland data including Menhaden
-  comland_combined <- dplyr::bind_rows(comland_df, mid_men, gom_men)
-  
-  # Load Species List ----
-  if (!file.exists(inputPathSpecies)) {
-    stop(paste0("Species list file not found: '", inputPathSpecies, "'."))
-  }
-  load(inputPathSpecies, envir = loaded_env <- new.env())
-  species <- loaded_env$species |> 
-    tibble::as_tibble()
-  
-  # Prepare Final Commercial Data for Aggregation ----
-  # Assign unknown EPU to 'OTHER'
-  comland_combined_clean <- comland_combined  |> 
-    dplyr::mutate(EPU = tidyr::replace_na(EPU, 'OTHER')) |> 
-    # Fix scallops in foreign landings to be meat weight (NESPP3 == 800 & US == F)
-    dplyr::mutate(SPPLIVMT = ifelse(NESPP3 == 800 & US == FALSE, SPPLIVMT / 8.33, SPPLIVMT))
-  
-  # Aggregate by EBFM codes and merge species info
-  species_for_merge <- species  |> 
-    dplyr::filter(!is.na(NESPP3))  |> 
-    dplyr::distinct(NESPP3, SOE.24, Fed.Managed)
-  
-  comland_agg <- comland_combined_clean  |> 
-    dplyr::left_join(species_for_merge, by = 'NESPP3')  |> 
-    # Fix NA codes for SOE.24
-    dplyr::mutate(SOE.24 = tidyr::replace_na(SOE.24, 'Other'))
-  
-  # Calculate Landings Indicators ----
-  # Landings
-  landings <- comland_agg |>
-    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
-    dplyr::summarise(V1 = sum(SPPLIVMT, na.rm = TRUE), .groups = "drop") |>
-    dplyr::bind_rows(nafo_landings_2019_plus) |> # Add NAFO data
-    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |> # Re-group after binding
-    dplyr::summarise(V1 = sum(V1, na.rm = TRUE), .groups = "drop") |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::mutate(Total = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |> # Ungroup for subsequent calculations if needed
-    dplyr::group_by(YEAR, EPU) |>
-    dplyr::mutate(Total.all = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::mutate(Prop.managed = V1 / Total) # Calculate proportion after totals
-  
-  # US Landings only
-  land_us <- comland_agg |>
-    dplyr::filter(US == TRUE) |>
-    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
-    dplyr::summarise(V1 = sum(SPPLIVMT, na.rm = TRUE), .groups = "drop") |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::mutate(Total = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::group_by(YEAR, EPU) |>
-    dplyr::mutate(Total.all = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::mutate(Prop.managed = V1 / Total)
-  
-  # Helper function to format landings data for output
-  format_landings <- function(df, var_prefix, use_us_only = FALSE) {
-    df |>
-      dplyr::mutate(
-        Var = case_when(
-          !is.na(SOE.24) & !is.na(Fed.Managed) ~
-            paste(SOE.24, Fed.Managed, 'managed species -', var_prefix),
-          !is.na(SOE.24) & is.na(Fed.Managed) ~
-            paste(SOE.24, var_prefix),
-          TRUE ~ paste(var_prefix) # This case handles Total.all
-        ),
-        Units = 'metric tons',
-        Source = 'Commercial Fisheries Database (comland)',
-        # Handle NA in Fed.Managed for formatting consistency for managed species
-        Fed.Managed = tidyr::replace_na(Fed.Managed, 'Other'),
-        # Adjust Var names where Fed.Managed is not applicable for Total/Total.all
-        Var = if_else(grepl("Total", Var),
-                      paste0(str_remove(Var, " Other managed species - "),
-                             if (use_us_only) " - US only" else ""),
-                      Var)
-      ) |>
-      dplyr::select(
-        Time = YEAR,
-        Value = V1, # For managed/agg, V1 is the value, for total, Total.all
-        Var,
-        Units,
-        Region = EPU,
-        Source,
-        Total, # Keep for calculations, will drop later
-        Total.all, # Keep for calculations, will drop later
-        SOE.24, # Keep for calculations, will drop later
-        Fed.Managed # Keep for calculations, will drop later
-      ) |>
-      dplyr::arrange(Time, Region, Var)
-  }
-  
-  # Format specific landings outputs
-  land_tot_formatted <- landings |>
-    dplyr::select(YEAR, EPU, Total.all) |>
-    dplyr::distinct() |>
-    dplyr::mutate(Var = 'Landings') |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total.all) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  land_tot_us_formatted <- land_us |>
-    dplyr::select(YEAR, EPU, Total.all) |>
-    dplyr::distinct() |>
-    dplyr::mutate(Var = 'Landings - US only') |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total.all) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  land_agg_formatted <- landings |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::summarise(Total_agg = sum(V1, na.rm = TRUE), .groups = "drop") |>
-    dplyr::mutate(Var = paste(SOE.24, 'Landings')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total_agg) |>
-    dplyr::select(-SOE.24) |> # Drop SOE.24 as it's in Var
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  land_agg_us_formatted <- land_us |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::summarise(Total_agg = sum(V1, na.rm = TRUE), .groups = "drop") |>
-    dplyr::mutate(Var = paste(SOE.24, 'Landings - US only')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total_agg) |>
-    dplyr::select(-SOE.24) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  land_man_formatted <- landings |>
-    dplyr::mutate(Fed.Managed = tidyr::replace_na(Fed.Managed, 'Other')) |>
-    dplyr::mutate(Var = paste(SOE.24, Fed.Managed, 'managed species - Landings weight')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = V1) |>
-    dplyr::select(-SOE.24, -Fed.Managed, -Total, -Prop.managed, -Total.all) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  land_man_us_formatted <- land_us |>
-    dplyr::mutate(Fed.Managed = tidyr::replace_na(Fed.Managed, 'Other')) |>
-    dplyr::mutate(Var = paste(SOE.24, Fed.Managed, 'managed species - Landings weight - US only')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = V1) |>
-    dplyr::select(-SOE.24, -Fed.Managed, -Total, -Prop.managed, -Total.all) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  
-  # Calculate Revenue Indicators ----
-  # Revenue
-  revenue <- comland_agg |>
-    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
-    dplyr::summarise(V1 = sum(SPPVALUE, na.rm = TRUE), .groups = "drop") |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::mutate(Total = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::group_by(YEAR, EPU) |>
-    dplyr::mutate(Total.all = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::mutate(Prop.managed = V1 / Total)
-  
-  # Revenue - US only
-  revenue_us <- comland_agg |>
-    dplyr::filter(US == TRUE) |>
-    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
-    dplyr::summarise(V1 = sum(SPPVALUE, na.rm = TRUE), .groups = "drop") |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::mutate(Total = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::group_by(YEAR, EPU) |>
-    dplyr::mutate(Total.all = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::mutate(Prop.managed = V1 / Total)
-  
-  # Helper function to format revenue data for output
-  format_revenue <- function(df, var_prefix, use_us_only = FALSE) {
-    df |>
-      dplyr::mutate(
-        Var = case_when(
-          !is.na(SOE.24) & !is.na(Fed.Managed) ~
-            paste(SOE.24, Fed.Managed, 'managed species -', var_prefix),
-          !is.na(SOE.24) & is.na(Fed.Managed) ~
-            paste(SOE.24, var_prefix),
-          TRUE ~ paste(var_prefix) # This case handles Total.all
-        ),
-        Units = 'US dollars',
-        Source = 'Commercial Fisheries Database (comland)',
-        Fed.Managed = tidyr::replace_na(Fed.Managed, 'Other'),
-        Var = if_else(grepl("Total", Var),
-                      paste0(str_remove(Var, " Other managed species - "),
-                             if (use_us_only) " - US only" else ""),
-                      Var)
-      ) |>
-      dplyr::select(
-        Time = YEAR,
-        Value = V1, # For managed/agg, V1 is the value, for total, Total.all
-        Var,
-        Units,
-        Region = EPU,
-        Source,
-        Total, Total.all, SOE.24, Fed.Managed # Keep for calculations, will drop later
-      ) |>
-      dplyr::arrange(Time, Region, Var)
-  }
-  
-  # Format specific revenue outputs
-  rev_tot_formatted <- revenue |>
-    dplyr::select(YEAR, EPU, Total.all) |>
-    dplyr::distinct() |>
-    dplyr::mutate(Var = 'Revenue') |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total.all) |>
-    dplyr::mutate(Units = 'US dollars', Source = 'Commercial Fisheries Database (comland)')
-  
-  rev_tot_us_formatted <- revenue_us |>
-    dplyr::select(YEAR, EPU, Total.all) |>
-    dplyr::distinct() |>
-    dplyr::mutate(Var = 'Revenue - US only') |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total.all) |>
-    dplyr::mutate(Units = 'US dollars', Source = 'Commercial Fisheries Database (comland)')
-  
-  rev_agg_formatted <- revenue |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::summarise(Total_agg = sum(V1, na.rm = TRUE), .groups = "drop") |>
-    dplyr::mutate(Var = paste(SOE.24, 'Revenue')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total_agg) |>
-    dplyr::select(-SOE.24) |>
-    dplyr::mutate(Units = 'US dollars', Source = 'Commercial Fisheries Database (comland)')
-  
-  rev_agg_us_formatted <- revenue_us |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::summarise(Total_agg = sum(V1, na.rm = TRUE), .groups = "drop") |>
-    dplyr::mutate(Var = paste(SOE.24, 'Revenue - US only')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total_agg) |>
-    dplyr::select(-SOE.24) |>
-    dplyr::mutate(Units = 'US dollars', Source = 'Commercial Fisheries Database (comland)')
-  
-  rev_man_formatted <- revenue |>
-    dplyr::mutate(Fed.Managed = tidyr::replace_na(Fed.Managed, 'Other')) |>
-    dplyr::mutate(Var = paste(SOE.24, Fed.Managed, 'managed species - Revenue')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = V1) |>
-    dplyr::select(-SOE.24, -Fed.Managed, -Total, -Prop.managed, -Total.all) |>
-    dplyr::mutate(Units = 'US dollars', Source = 'Commercial Fisheries Database (comland)')
-  
-  rev_man_us_formatted <- revenue_us |>
-    dplyr::mutate(Fed.Managed = tidyr::replace_na(Fed.Managed, 'Other')) |>
-    dplyr::mutate(Var = paste(SOE.24, Fed.Managed, 'managed species - Revenue - US only')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = V1) |>
-    dplyr::select(-SOE.24, -Fed.Managed, -Total, -Prop.managed, -Total.all) |>
-    dplyr::mutate(Units = 'US dollars', Source = 'Commercial Fisheries Database (comland)')
-  
-  # Calculate Seafood Landings Indicators (US Only) ----
-  seafood <- comland_agg |>
-    dplyr::filter(US == TRUE, UTILCD == 0) |> # US only and food fish/unknown
-    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed, UTILCD) |>
-    dplyr::summarise(V1 = sum(SPPLIVMT, na.rm = TRUE), .groups = "drop") |>
-    dplyr::mutate(Fed.Managed = tidyr::replace_na(Fed.Managed, 'Other')) |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::mutate(Total = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup() |>
-    dplyr::group_by(YEAR, EPU) |>
-    dplyr::mutate(Total.all = sum(V1, na.rm = TRUE)) |>
-    dplyr::ungroup()
-  
-  # Formatting for seafood is similar
-  sea_tot_formatted <- seafood |>
-    dplyr::select(YEAR, EPU, Total.all) |>
-    dplyr::distinct() |>
-    dplyr::mutate(Var = 'Seafood Landings') |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total.all) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  sea_agg_formatted <- seafood |>
-    dplyr::group_by(YEAR, EPU, SOE.24) |>
-    dplyr::summarise(Total_agg = sum(V1, na.rm = TRUE), .groups = "drop") |>
-    dplyr::mutate(Var = paste(SOE.24, 'Seafood Landings')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = Total_agg) |>
-    dplyr::select(-SOE.24) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  sea_man_formatted <- seafood |>
-    dplyr::mutate(Var = paste(SOE.24, Fed.Managed, 'managed species - Seafood Landings')) |>
-    dplyr::rename(Time = YEAR, Region = EPU, Value = V1) |>
-    dplyr::select(-SOE.24, -Fed.Managed, -Total, -Total.all, -UTILCD) |>
-    dplyr::mutate(Units = 'metric tons', Source = 'Commercial Fisheries Database (comland)')
-  
-  # Combine All Indicators ----
-  commercial_all_indicators <- dplyr::bind_rows(
-    land_tot_formatted,
-    rev_tot_formatted,
-    sea_tot_formatted,
-    land_agg_formatted,
-    land_agg_us_formatted, # Note: original script had this but no matching rev/sea for US agg
-    rev_agg_formatted,
-    sea_agg_formatted,
-    land_man_formatted,
-    land_man_us_formatted,
-    rev_man_formatted,
-    rev_man_us_formatted,
-    sea_man_formatted
-  ) |>
-    dplyr::arrange(Time, Region, Var) |>
-    dplyr::distinct() # Remove any exact duplicate rows after combining and formatting
-  
-  # Save Output (if save_to_file is TRUE) ----
-  if (save_to_file) {
-    yr_suffix <- stringr::str_sub(as.character(soe_report_year), 3, 4)
-    file_name_prefix <- paste0("Commercial_data_pull_", yr_suffix)
-    
-    # Save as RDS (more robust for R objects)
-    saveRDS(commercial_all_indicators, file = here::here("data-raw", paste0(file_name_prefix, ".rds")))
-    # Save as RData (for compatibility with previous workflows if necessary)
-    commercial <- commercial_all_indicators # Rename for consistency with original save()
-    save(commercial, file = here::here("data", paste0(file_name_prefix, ".RData")))
-    invisible(commercial_all_indicators) # Return invisibly as saving is the primary action
-  } else {
-    return(commercial_all_indicators)
-  }
-}
-
-
-
-
-get_comdat <- function(input_path_commercial_comdat, save_clean = FALSE) {
-  
-  # --- Input Validation ---
-  if (!file.exists(input_path_commercial_comdat)) {
-    stop(paste0("Input file not found: '", input_path_commercial_comdat,
-                "'. Please ensure the file exists at the specified path."))
-  }
-  
-  # --- Load Data ---
-  loaded_env <- new.env() # Load into a new environment to avoid polluting global env
-  load(input_path_commercial_comdat, envir = loaded_env)
-  
-  # Check if 'comdat' object exists in the loaded environment
-  if (!"comdat" %in% ls(envir = loaded_env)) {
-    stop(paste0("Expected 'comdat' object not found in '",
-                basename(input_path_rdata),
-                "'. Please check the content of your file."))
-  }
-  comdat <- loaded_env$comdat # Assign the loaded object to 'comdat' variable
-  
-  
-  # --- Data Processing ---
-  comdat <- comdat  |> 
-    dplyr::rename(EPU = Region)  |> 
-    dplyr::select(-Source)  |> 
-    tibble::as_tibble()  |>
-    dplyr::select(Time, Var, Value, EPU, Units) |> 
+  # 3. Clean and Process Data ----
+  comdat_clean <- comdat |>
+    dplyr::rename(EPU = Region) |>
+    dplyr::select(-Source) |>
+    tibble::as_tibble() |>
+    dplyr::select(Time, Var, Value, EPU, Units) |>
     dplyr::arrange(Var, Time)
   
-  # --- Add Metadata as Attributes ---
-  attr(comdat, "tech-doc_url") <- "https://noaa-edab.github.io/tech-doc/comdat.html"
-  attr(comdat, "data_files") <- list(
-    comdat_RData = basename(input_path_commercial_comdat)
-  )
-  attr(comdat, "data_steward") <- c(
-    "Sean Lucey <sean.lucey@noaa.gov>"
-  )
-  attr(comdat, "plot_script") <- list(
+  # 4. Attach Metadata as Attributes ----
+  attr(comdat_clean, "tech-doc_url") <- "https://noaa-edab.github.io/tech-doc/comdat.html"
+  attr(comdat_clean, "data_files")   <- list(comdat_RData = comdat_rdata_file)
+  attr(comdat_clean, "data_steward") <- "Sean Lucey <sean.lucey@noaa.gov>"
+  attr(comdat_clean, "plot_script")  <- list(
     `hd_MAB_comm-revenue` = "human_dimensions_MAB.Rmd-comdat-comm-revenue.R",
     `hd_MAB_commercial-landings` = "human_dimensions_MAB.Rmd-comdat-commercial-landings.R",
     `hd_MAB_total-landings` = "human_dimensions_MAB.Rmd-comdat-total-landings.R",
@@ -1131,11 +406,12 @@ get_comdat <- function(input_path_commercial_comdat, save_clean = FALSE) {
     `hd_NE_total-landings` = "human_dimensions_NE.Rmd-comdat-total-landings.R"
   )
   
-  # --- Save or Return Data ---
+  # 5. Save or Return Data ----
   if (save_clean) {
-    usethis::use_data(comdat, overwrite = TRUE, internal = FALSE)
-    invisible(comdat) # Return invisibly as a side effect (saving) is primary
+    # Save the data object 'comdat_clean' to the data/ folder for use in a package
+    usethis::use_data(comdat_clean, overwrite = TRUE)
   } else {
-    return(comdat)
+    # Return the cleaned data frame
+    return(comdat_clean)
   }
 }
