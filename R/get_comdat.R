@@ -141,34 +141,6 @@ process_nafo_catch_data <- function(path_to_files = NULL, create_plot = FALSE) {
 
 # create_comdat -------------------
 
-# 
-# Helper Functions
-# 
-
-#' Load and Prepare Menhaden Data
-#'
-#' @param menhaden_path Path to the menhadenEOF.rds file.
-#' @return A tibble of menhaden data formatted to match comland data.
-
-load_menhaden_data <- function(menhaden_path) {
-  readRDS(menhaden_path) |>
-    as_tibble() |>
-    tidyr::pivot_longer(
-      cols = c(MABcatch, GOMcatch),
-      names_to = "EPU",
-      values_to = "SPPLIVMT"
-    ) |>
-    dplyr::mutate(
-      EPU = sub("catch", "", EPU),
-      YEAR = year,
-      NESPP3 = 221, # Menhaden species code
-      NEGEAR = 0,
-      UTILCD = dplyr::case_when(EPU == "MAB" ~ 9, EPU == "GOM" ~ 7, TRUE ~ NA_real_),
-      SPPVALUE = 0,
-      US = TRUE
-    ) |>
-    dplyr::select(YEAR, EPU, NESPP3, SPPLIVMT, SPPVALUE, NEGEAR, UTILCD, US)
-}
 
 
 #' Summarize Commercial Metrics in Multiple Ways
@@ -211,10 +183,6 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 }
 
 
-# 
-# Main Function
-# 
-
 #' Create data for ecodata::comdat submission
 #'
 #' Processes and combines commercial landings, NAFO foreign landings, and
@@ -226,12 +194,14 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 #' @param end_year The last year of data to include.
 #' @param nafo_path Path to the NAFO 21A CSV file.
 #' @param species_list_path Path to the 'SOE_species_list_24.RData' file.
-#' @param menhaden_path Path to the 'menhadenEOF.rds' file.
+#' @param menhaden_path Path to the menhaden data from SEFSC.
 #' @param save_to_file Boolean. If TRUE, saves the final output to disk.
 #'
 #' @return A single tibble containing all summarized commercial data.
 #' 
-#' #' @importFrom dplyr bind_rows case_when distinct filter group_by left_join mutate rename select summarise tribble
+#'
+#' @importFrom readxl read_excel
+#' @importFrom dplyr bind_rows bind_cols case_when distinct filter group_by left_join mutate rename select summarise tribble
 #' @importFrom tidyr pivot_longer
 #' @importFrom tibble as_tibble
 #' @importFrom here here
@@ -241,13 +211,13 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 #'
 #' @export
 
-create_commercial_data_summary <- function(channel,
-                                           report_year,
-                                           end_year,
-                                           nafo_path,
-                                           species_list_path,
-                                           menhaden_path,
-                                           save_to_file = FALSE) {
+create_comdat <- function(channel,
+                          report_year,
+                          end_year,
+                          nafo_path,
+                          species_list_path,
+                          menhaden_path,
+                          save_to_file = FALSE) {
   
   # 1. Define EPU Areas for comlandr ----
   epu_areas <- dplyr::tribble(
@@ -267,14 +237,18 @@ create_commercial_data_summary <- function(channel,
   
   # Load commercial data from database
   comland_raw <- comlandr::get_comland_data(
-    channel = channel, filterByYear = 1964:end_year, refYear = end_year,
-    userAreas = epu_areas, unkVar = c('MONTH', 'NEGEAR', 'AREA'),
+    channel = channel, filterByYear = 1964:end_year, refYear = end_year, 
+    refMonth = 1, aggArea = T, userAreas = epu_areas, 
+    unkVar = c('MONTH', 'NEGEAR', 'AREA'),
     knStrata = c('HY', 'QY', 'MONTH', 'NEGEAR', 'TONCL2', 'AREA')
   )$comland |>
     tibble::as_tibble() |>
     dplyr::filter(NESPP3 != 221, NESPP3 != 789) # Remove Menhaden and Eastern Oyster
   
   # Load NAFO foreign landings
+  
+  source(here::here("R/get_nafo_21a_soe.r"))
+  
   nafo_landings <- get_nafo_21a_soe(pathToFiles = nafo_path, isplot = FALSE)$data |>
     dplyr::filter(Year > 2018, EPU != "SS") |>
     dplyr::group_by(Year, EPU) |>
@@ -286,7 +260,47 @@ create_commercial_data_summary <- function(channel,
     dplyr::rename(YEAR = Year)
   
   # Load Menhaden data
-  menhaden_data <- load_menhaden_data(menhaden_path)
+
+  ## call in raw data
+  ### year
+    col_a <- readxl::read_excel(
+      path = menhaden_path,
+      sheet = 1,
+      range = "A7:A65",
+      col_names = TRUE
+    )
+  ### mid data (mt)
+    col_e <- readxl::read_excel(
+      path = menhaden_path,
+      sheet = 1,
+      range = "E7:E65",
+      col_names = TRUE
+    )
+  ### gom data (mt)  
+    col_f <- readxl::read_excel(
+      path = menhaden_path,
+      sheet = 1,
+      range = "F7:F65",
+      col_names = TRUE
+    )
+    
+  
+  ## Mid-Atlantic  
+    mid.men <- dplyr::bind_cols(col_a, col_e) |> 
+      dplyr::rename(YEAR = year, SPPLIVMT = 'NC Border northward to MA Border') |> 
+      dplyr::mutate(MONTH = 1, NESPP3 = 221, NEGEAR = 0, TONCL2 = NA, EPU = 'MAB', UTILCD = 9,
+                    MARKET_CODE = 'UN', MESHCAT = NA, SPPVALUE = 0, US = T)
+    
+    
+    
+  ## GOM
+    gom.men <- dplyr::bind_cols(col_a, col_f) |> 
+      dplyr::rename(YEAR = year, SPPLIVMT = 'MA Border and North') |> 
+      dplyr::mutate(NESPP3 = 221, MONTH = 1, NEGEAR = 0, TONCL2 = NA, EPU = 'GOM',
+                    UTILCD = 7, MARKET_CODE = 'UN', MESHCAT = NA, 
+                    SPPVALUE = 0, US = T)
+  
+  
   
   # Load species list for grouping
   load(species_list_path) # Loads object `species`
