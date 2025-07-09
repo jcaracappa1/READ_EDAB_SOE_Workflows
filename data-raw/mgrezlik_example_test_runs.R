@@ -7,6 +7,8 @@ inputPathSpecies <- "/home/mgrezlik/EDAB_Datasets/SOE_species_list_24.rds"
 inputPathAlbatross <- "/home/mgrezlik/EDAB_Dev/beet/albatrossData.rds"
 inputPathBigelow <- "/home/mgrezlik/EDAB_Dev/beet/bigelowData.rds"
 staticPath <-  "/home/mgrezlik/EDAB_Resources/"
+menhaden_path <- "/home/mgrezlik/EDAB_Datasets/AM Landings by Gaichas Regions 1967-2024.xlsx"
+nafo_path <- 
 
 source(here::here("data-raw/workflow_species_dist.R"))
 
