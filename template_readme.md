@@ -17,6 +17,7 @@ SOEworkflows::get_survey_data(channel,outputPathDatasets)
   - `surveyNoLengths.rds` - used in `aggregate_biomass`
   - `bigelowData.rds` - used in `survey_shannon`
   - `albatrosData.rds` - used in `survey_shannon`
+  - `condition.rds` - used in `condition`
 
 ### aggregate_biomass
 
