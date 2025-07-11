@@ -208,6 +208,15 @@ create_comdat <- function(comdat_path,
                           menhaden_path,
                           save_to_file = FALSE) {
   
+  
+  # Check if the input files exist ---------------------------
+  if (file.exists(comdat_path) && file.exists(input_path_species) && file.exists(menhaden_path)) {
+    
+  } else {
+    stop("One or more of the input files are not present in the location specified")
+  }
+  
+  
   # 1. Define EPU Areas for comlandr ----
   epu_areas <- dplyr::tribble(
     ~AREA, ~EPU,
