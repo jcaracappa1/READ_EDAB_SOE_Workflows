@@ -4,11 +4,13 @@ outputPath <- "/home/mgrezlik/EDAB_Dev/beet"
 input_path_commercial_comdat <- "/home/mgrezlik/EDAB_Dev/beet/commercial_comdat.rds"
 inputPathSurvey <- "/home/mgrezlik/EDAB_Dev/beet/surveyNoLengths.rds"
 inputPathSpecies <- "/home/mgrezlik/EDAB_Datasets/SOE_species_list_24.rds"
+# ditching camel case moving forward
+input_path_species <- "/home/mgrezlik/EDAB_Datasets/SOE_species_list_24.rds"
 inputPathAlbatross <- "/home/mgrezlik/EDAB_Dev/beet/albatrossData.rds"
 inputPathBigelow <- "/home/mgrezlik/EDAB_Dev/beet/bigelowData.rds"
 staticPath <-  "/home/mgrezlik/EDAB_Resources/"
 menhaden_path <- "/home/mgrezlik/EDAB_Datasets/AM Landings by Gaichas Regions 1967-2024.xlsx"
-nafo_path <- 
+comdat_path <- '/home/mgrezlik/EDAB_Dev/beet/commercial_comdat.rds'
 
 source(here::here("data-raw/workflow_species_dist.R"))
 
