@@ -1,0 +1,23 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/articles/index.html</loc></url>
+<url><loc>/articles/stock_status.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/reference/build_pdb.html</loc></url>
+<url><loc>/reference/create_aggregate_biomass.html</loc></url>
+<url><loc>/reference/create_aggregate_biomass_epu.html</loc></url>
+<url><loc>/reference/create_aggregate_biomass_shelfwide.html</loc></url>
+<url><loc>/reference/create_exp_n.html</loc></url>
+<url><loc>/reference/create_pdb.html</loc></url>
+<url><loc>/reference/create_species_dist.html</loc></url>
+<url><loc>/reference/create_stock_status.html</loc></url>
+<url><loc>/reference/create_survey_shannon.html</loc></url>
+<url><loc>/reference/get_survey_data.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/is_even.html</loc></url>
+<url><loc>/reference/plot_stocksmart.html</loc></url>
+<url><loc>/reference/prep_for_plotting.html</loc></url>
+<url><loc>/template_readme.html</loc></url>
+</urlset>
+
