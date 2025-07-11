@@ -80,7 +80,7 @@ To run the "workflow" below, it is assumed that the `stocksmart` R package has b
 workflow_stock_status(inputPath, outputPath)
 ```
 
-* `inputPath` is the path to static data set `EDAB_Datasets/2024decoder.csv`.
+* `inputPath` is the path to static data set `EDAB_Datasets/decoder.csv`.
 * `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
 The rds file name is hardcoded as `stock_status.rds` to match the `ecodata` package dataset
 
