@@ -1,0 +1,205 @@
+---
+title: "Overview of Stock Status Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Overview of Stock Status Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.height = 5, fig.width = 7)
+
+# remotes::install_github("https://github.com/NOAA-EDAB/stocksmart")
+
+library(here)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(DT)
+library(stocksmart)
+library(ggrepel)
+library(ecodata)
+library(ggiraph)
+
+devtools::load_all(here::here(""))
+```
+
+This vignette demonstrates how to use this R package to create the stock status indicator for the State of the Ecosystem reports.
+
+## Pull data from `stocksmart`
+Andy renamed the assessmentdata package [stocksmart](https://noaa-edab.github.io/stocksmart/) based on [Stock SMART](https://www.st.nmfs.noaa.gov/stocksmart?app=homepage). 
+
+Two data frames are in the package, `stockAssessmentData` and `stockAssessmentSummary`.
+
+In `stockAssessmentData` we have time series. Columns are `r names(stockAssessmentData)` and the reported metrics are `r unique(stockAssessmentData$Metric)`. 
+
+
+```{r}
+datatable(head(stockAssessmentData), rownames = FALSE, options = list(scrollX = TRUE))
+```
+
+In `stockAssessmentSummary` we have assessment metadata. Columns are `r (names(stockAssessmentSummary))`.
+
+```{r}
+datatable(head(stockAssessmentSummary), rownames = FALSE, options = list(scrollX = TRUE))
+```
+
+## Supplement with PDB data, if needed
+
+Build a stocksmart-like object from PDB files from Spring 2024 MT assessments
+
+```{r}
+MTspring24 <- build_pdb(
+  stocknames = data.frame(
+    Stock.Name = c(
+      "Black sea bass - Mid-Atlantic Coast",
+      "Butterfish - Gulf of Maine / Cape Hatteras",
+      "Atlantic cod - Eastern Gulf of Maine",
+      "Atlantic cod - Georges Bank",
+      "Atlantic cod - Southern New England",
+      "Atlantic cod - Western Gulf of Maine",
+      "Tilefish - Mid-Atlantic Coast",
+      "Atlantic herring - Northwestern Atlantic Coast",
+      "Atlantic surfclam - Mid-Atlantic Coast"
+    ),
+    ABBR = c(
+      "BSBUNIT",
+      "BUTUNIT",
+      "CODEGOM",
+      "CODGB",
+      "CODSNE",
+      "CODWGOM",
+      "GTFUNIT",
+      "HERUNIT",
+      "SCUNIT"
+    )
+  ),
+  fnames = here::here("data-raw/SISspringMT2024") |>
+    list.files(
+      pattern = "db.RData.csv$",
+      full.names = TRUE
+    ),
+  year = 2024)
+
+head(MTspring24)
+```
+
+## Create an `assess.csv`-like object
+
+The `create_stock_status()` function can be used to create a data frame similar to the `assess.csv` file that Sarah used to provide. This data is not fully processed for inclusion in `ecodata`.
+
+```{r}
+stock_status <- create_stock_status(
+  data = stocksmart::stockAssessmentSummary,
+  decode = FALSE)
+
+head(stock_status)
+```
+
+## Create the stock status indicator
+
+### With stocksmart data only
+
+```{r, warning = TRUE}
+stock_status <- create_stock_status(
+  data = stocksmart::stockAssessmentSummary,
+  decode = read.csv(here::here("data-raw/2024decoder.csv"))
+)
+
+head(stock_status)
+```
+
+```{r, plt-mafmc}
+stock_status |>
+  prep_for_plotting(council = "MAFMC") |>
+  plot_stocksmart(xmax = 2.6, ymax = 2.1)
+```
+
+```{r, plt-nefmc}
+stock_status |>
+  prep_for_plotting(council = "NEFMC") |>
+  plot_stocksmart(xmax = 5, ymax = 2)
+```
+
+```{r, missing-status}
+stock_status |>
+  prep_for_plotting(council = c("MAFMC", "NEFMC")) |>
+  dplyr::filter(is.na(F.Fmsy) | is.na(B.Bmsy)) |>
+  dplyr::select(Council, Stock, F.Fmsy, B.Bmsy) |>
+  knitr::kable(caption = "Stocks with unknown status")
+```
+
+### With the PDB data added
+
+```{r, warning = TRUE}
+stock_status <- create_stock_status(
+  data = stocksmart::stockAssessmentSummary,
+  decode = read.csv(here::here("data-raw/2024decoder.csv")),
+  merge_data = MTspring24
+)
+
+head(stock_status)
+```
+
+```{r}
+<<plt-mafmc>>
+<<plt-nefmc>>
+<<missing-status>>
+```
+
+## Complete workflow examples
+
+### With stocksmart data only
+
+```{r, eval = FALSE}
+stock_status <- create_stock_status(
+  data = stocksmart::stockAssessmentSummary,
+  decode = read.csv(here::here("data-raw/2024decoder.csv"))
+)
+```
+
+### With the PDB data added
+
+```{r, eval = FALSE}
+# build PDB data to add
+MTspring24 <- build_pdb(
+  stocknames = data.frame(
+    Stock.Name = c(
+      "Black sea bass - Mid-Atlantic Coast",
+      "Butterfish - Gulf of Maine / Cape Hatteras",
+      "Atlantic cod - Eastern Gulf of Maine",
+      "Atlantic cod - Georges Bank",
+      "Atlantic cod - Southern New England",
+      "Atlantic cod - Western Gulf of Maine",
+      "Tilefish - Mid-Atlantic Coast",
+      "Atlantic herring - Northwestern Atlantic Coast",
+      "Atlantic surfclam - Mid-Atlantic Coast"
+    ),
+    ABBR = c(
+      "BSBUNIT",
+      "BUTUNIT",
+      "CODEGOM",
+      "CODGB",
+      "CODSNE",
+      "CODWGOM",
+      "GTFUNIT",
+      "HERUNIT",
+      "SCUNIT"
+    )
+  ),
+  fnames = here::here("data-raw/SISspringMT2024") |>
+    list.files(
+      pattern = "db.RData.csv$",
+      full.names = TRUE
+    ),
+  year = 2024)
+
+# create indicator
+stock_status <- create_stock_status(
+  data = stocksmart::stockAssessmentSummary,
+  decode = read.csv(here::here("data-raw/2024decoder.csv")),
+  merge = MTspring24
+)
+```
