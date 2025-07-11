@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_survey_data.R
 \name{get_survey_data}
 \alias{get_survey_data}
-\title{Get survey data set to store somewhere}
+\title{Get survey data using survdat}
 \usage{
 get_survey_data(channel, outputPathDatasets = NULL)
 }
@@ -13,7 +13,7 @@ This object is used to connect to communicate with the database engine.}
 \item{outputPathDatasets}{Character string. Path to folder where data pull
 should be saved (Default = NULL). If not NULL the pull will be saved to the
 folder \code{outputPathDatasets} with names (\code{lbatrossData.rds},
-\code{bigelowData.rds},\code{surveyNoLengths.rds})}
+\code{bigelowData.rds},\code{surveyNoLengths.rds}, \code{condition.rds})}
 }
 \value{
 A list of survey data pulls
