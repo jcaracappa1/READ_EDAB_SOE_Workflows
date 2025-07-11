@@ -1,6 +1,7 @@
 #' Creates stocksmart-like object from files received from PDB
 #'
-#' This function reads in stock status files from PDB and returns a stocksmart-like object. It was created based on the files for spring 2024 MT assessments, which were sent via email from Kristan Blackhart to Scott. Dan Hennen created the files.
+#' This function reads in a stock status file from PDB and returns a stocksmart-like object. It was created based on the files for spring 2024 MT assessments, which were sent via email from Kristan Blackhart to Scott. Dan Hennen created the files.
+#' This function is used by `build_pdb()`.
 #'
 #' @param dirfname A character string representing the directory where the stock status files are stored
 #'
