@@ -142,6 +142,10 @@
 
 #' Helper function for the summaries in create_comdat
 #' 
+#' @param data specify if all data, US only, seafood only should be used
+#' @param metric_name metric to be summarized
+#' @param unit_name description of what is being summarized and in what units
+#' 
 #' @importFrom dplyr group_by summarise mutate select distinct rename
 summarize_metrics <- function(data, value_col, metric_name, unit_name) {
   
