@@ -6,16 +6,13 @@
 \usage{
 create_stock_status(
   data = stocksmart::stockAssessmentSummary,
-  decode = read.csv(here::here("2024decoder.csv")),
-  merge_data = NULL
+  decode = utils::read.csv(here::here("data-raw/2024decoder.csv"))
 )
 }
 \arguments{
 \item{data}{the stock status data frame, typically from \code{stocksmart::stockAssessmentSummary}}
 
 \item{decode}{a data frame that joins the stock names with a code abbreviation to use in plotting, typically read from a CSV file. If set to \code{FALSE}, the function will return a data frame in a less processed form, like Sarah used to provide in the \code{assess.csv} file.}
-
-\item{merge_data}{an optional data frame to merge with the additional stock assessment data from PDB, e.g., for updates or additional stocks. \emph{This data must be formatted in a stocksmart-like data frame}}
 }
 \value{
 a tibble

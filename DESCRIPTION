@@ -26,6 +26,10 @@ Imports:
     stringr,
     tidyr,
     sf,
-    vegan
+    vegan,
+    stocksmart,
+    rlang,
+    utils
 Remotes:
   NOAA-EDAB/survdat
+  NOAA-EDAB/stocksmart
