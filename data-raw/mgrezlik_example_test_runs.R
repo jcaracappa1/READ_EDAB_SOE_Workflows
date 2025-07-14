@@ -126,7 +126,7 @@ library(ecodata)
       geom_point(aes(shape = Var), size = setup$pcex) +
       facet_wrap(~EPU, scales = "free_y")
 
-    land_ylabdat <- expression("Revenue (10"^6 * " USD)")
+    land_ylabdat <- expression("Landings (10"^3 * " metric tons)")
     
   # DATA WRANGLING FOR REVENUE ----
     
