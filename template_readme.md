@@ -82,8 +82,25 @@ workflow_species_dist(outputPath,inputPathSurvey,inputPathSpecies)
 * `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
 The rds file name is hardcoded as `species_dist.rds` to match the `ecodata` package dataset
 
-## Commercial Laindings Based Indicators
+## Commercial Landings Based Indicators
 
 ### comdat
 
+To run the "workflow" below, it is assumed that the necessary raw data files 
+(commercial landings, species lists, and Menhaden data) are available.
 
+*Note: the following function resides in the folder `data-raw` and is NOT part of the package*
+
+The workflow is typically run by piping the output of `create_comdat` directly into `get_comdat`:
+
+```R
+create_comdat(comdat_path, report_year, end_year, input_path_species, menhaden_path) |>
+  get_comdat(save_for_package = TRUE)
+```
+
+* `comdat_path` is the path to the raw, comprehensive commercial landings data file, e.g., `EDAB_Datasets/commercial_comdat.rds`.
+* `report_year` is the year of the State of the Ecosystem report (e.g., 2025).
+* `end_year` is the final year of data to be included in the analysis.
+* `input_path_species` is the path to the species list used for grouping, e.g., `EDAB_Datasets/SOE_species_list_24.rds`.
+* `menhaden_path` is the path to the Menhaden landings data Excel file provided by SEFSC.
+* The final output is saved by `get_comdat` to the `data/` folder. The file name is hardcoded as `comdat.rda` to match the `ecodata` package dataset.
