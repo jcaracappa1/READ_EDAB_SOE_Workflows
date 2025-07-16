@@ -11,6 +11,8 @@ inputPathBigelow <- "/home/mgrezlik/EDAB_Dev/beet/bigelowData.rds"
 staticPath <-  "/home/mgrezlik/EDAB_Resources/"
 menhaden_path <- "/home/mgrezlik/EDAB_Datasets/AM Landings by Gaichas Regions 1967-2024.xlsx"
 comdat_path <- '/home/mgrezlik/EDAB_Dev/beet/commercial_comdat.rds'
+old_menh_path <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF2024.rds'
+
 
 source(here::here("data-raw/workflow_species_dist.R"))
 
@@ -68,7 +70,7 @@ missing_from_ecodata <- dplyr::anti_join(
   by = c("Time", "Var", "EPU")
 )
 
-# comparison plots using ecodata::plot_comdat() as a template
+# comparison plots using ecodata::plot_comdat() as a template ---------------
 library(stringr)
 library(dplyr)
 library(ggplot2)
@@ -128,7 +130,7 @@ library(ecodata)
 
     land_ylabdat <- expression("Landings (10"^3 * " metric tons)")
     
-  # DATA WRANGLING FOR REVENUE ----
+  ## DATA WRANGLING FOR REVENUE ----
     
     # Filter for relevant variables, keeping the source distinct
     total_revenue <- comdat_compare |>
@@ -180,7 +182,7 @@ library(ecodata)
       geom_point(aes(shape = Var), size = setup$pcex) +
       facet_wrap(~EPU, scales = "free_y")
   
-  # PLOTTING ----
+  ## PLOTTING ----
  
     # Apply common aesthetics
     p_tot_rev <- plot_total_revenue +
@@ -216,7 +218,7 @@ library(ecodata)
       theme(legend.position = "bottom", legend.title = element_blank())
 
     
-# saving plots -----------
+## saving plots -----------
 # ggsave(
 #   filename = here::here('data-raw','total_revenue.pdf'),
 #                         plot = p_tot_rev
@@ -238,3 +240,101 @@ library(ecodata)
 # )
     
     
+    
+# Menhaden comparisons ----------------------------
+    
+# plots show difference in landings of MAB planktivores
+# comparing my data to old menhaden data to see if its a menhaden issue
+    
+## workflow menhaden ------------------
+    ## call in raw data
+    ### remove header rows with meta data
+    menh <- readxl::read_excel(menhaden_path, sheet = 1, skip = 6)
+    
+    ## Mid-Atlantic  
+    mid.men <- menh |>
+      dplyr::select(1, 5) |> 
+      # Now rename the columns to something clean and predictable
+      dplyr::rename(YEAR = 1, SPPLIVMT = 2) |>
+      dplyr::mutate(MONTH = 1, NESPP3 = 221, NEGEAR = 0, TONCL2 = NA, EPU = 'MAB', UTILCD = 9,
+                    MARKET_CODE = 'UN', MESHCAT = NA, SPPVALUE = 0, US = T)
+    
+    
+    
+    ## GOM
+    gom.men <- menh |>
+      dplyr::select(1, 6) |>
+      # Rename the columns
+      dplyr::rename(YEAR = 1, SPPLIVMT = 2) |>
+      dplyr::mutate(NESPP3 = 221, MONTH = 1, NEGEAR = 0, TONCL2 = NA, EPU = 'GOM',
+                    UTILCD = 7, MARKET_CODE = 'UN', MESHCAT = NA,
+                    SPPVALUE = 0, US = T)
+    
+    
+    ## combine mid.men and gom.men
+    menhaden_max <- dplyr::bind_rows(mid.men, gom.men)    
+
+    
+## old menhaden ----------------------------
+    # using script from https://github.com/NOAA-EDAB/SOE_data/blob/main/R/create_comdat.R
+    #Add Menhaden directly
+    old_menh <- data.table::as.data.table(readRDS(old_menh_path))
+    #Get in same format as comland
+    #Mid-Atlantic
+    mid.men <- old_menh[, list(year, MABcatch)]
+    data.table::setnames(mid.men, c('year', 'MABcatch'), c('YEAR', 'SPPLIVMT'))
+    mid.men[, MONTH := 1]
+    mid.men[, NESPP3 := 221]
+    mid.men[, NEGEAR := 0] #Double check
+    mid.men[, TONCL2 := NA] #Double check
+    mid.men[, EPU := 'MAB']
+    mid.men[, UTILCD := 9]
+    mid.men[, MARKET_CODE := 'UN']
+    mid.men[, MESHCAT := NA]
+    mid.men[, SPPVALUE := 0]
+    mid.men[, US := T]
+    
+    #GOM
+    gom.men <- old_menh[, list(year, GOMcatch)]
+    data.table::setnames(gom.men, c('year', 'GOMcatch'), c('YEAR', 'SPPLIVMT'))
+    gom.men[, NESPP3 := 221]
+    gom.men[, MONTH := 1]
+    gom.men[, NEGEAR := 0]
+    gom.men[, TONCL2 := NA]
+    gom.men[, EPU := 'GOM']
+    gom.men[, UTILCD := 7]
+    gom.men[, MARKET_CODE := 'UN']
+    gom.men[, MESHCAT := NA]
+    gom.men[, SPPVALUE := 0]
+    gom.men[, US := T]
+      
+    old_menh <- data.table::rbindlist(list(mid.men, gom.men), use.names = T)
+
+## combining old and new for plotting --------------------
+    
+    menh_comp_max <- menhaden_max |> 
+                        dplyr::mutate(source = 'workflow_pull')
+
+    menh_comp_old <- old_menh |> 
+                        dplyr::mutate(source = 'menhadenEOF2024.rds')
+
+    menh_comp_combined <- dplyr::bind_rows(menh_comp_max, menh_comp_old)    
+
+## plot time series -----------------------------
+    
+    plot_menh_compare <- menh_comp_combined |>
+      ggplot(aes(x = YEAR, y = SPPLIVMT, color = source)) +
+      geom_line() +
+      facet_wrap( ~ EPU, scales = "free_y") +
+      labs(y = 'Landings (10^3 metric tons)', x = NULL) +
+      ggtitle('Menhaden data comparison') +
+      ecodata::theme_ts() +
+      ecodata::theme_title() +
+      ecodata::theme_facet() +
+      theme(legend.position = "bottom", legend.title = element_blank())
+
+## saving plot -----------
+    # ggsave(
+    #   filename = here::here('data-raw','menhaden_data.pdf'),
+    #                         plot = plot_menh_compare
+    # )
