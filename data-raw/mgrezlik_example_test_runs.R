@@ -447,7 +447,13 @@ comdat_max <- comdat |>
 comdat_old_comlandr <- old_comdat |> 
   dplyr::mutate(source = 'old_comlandr')
 
-comdat_compare <- dplyr::bind_rows(comdat_max, comdat_old_comlandr)
+# comdat_compare <- dplyr::bind_rows(comdat_max, comdat_old_comlandr)
+
+# comparing old comdat to ecodata
+
+comdat_compare <- dplyr::bind_rows(comdat_old_comlandr, comdat_ecodata)
+
+
 
 setup <- ecodata::plot_setup(shadedRegion = NULL, report = "MidAtlantic")
 
@@ -505,9 +511,6 @@ plot_total_landings <- totdat |>
 land_ylabdat <- expression("Landings (10"^3 * " metric tons)")
 
 ## DATA WRANGLING FOR REVENUE ----
-
-setup <- ecodata::plot_setup(shadedRegion = NULL,
-                             report='MidAtlantic')
 
 # Filter for relevant variables, keeping the source distinct
 total_revenue <- comdat_compare |>
@@ -597,21 +600,21 @@ p_guild_land <- plot_guild_landings +
 
 ## saving plots -----------
 # ggsave(
-#   filename = here::here('data-raw','total_revenue_old_comlandr.pdf'),
+#   filename = here::here('data-raw','total_revenue_old_comlandr_ecodata.pdf'),
 #                         plot = p_tot_rev
 # )
 # 
 # ggsave(
-#   filename = here::here('data-raw','guild_revenue_old_comlandr.pdf'),
+#   filename = here::here('data-raw','guild_revenue_old_comlandr_ecodata.pdf'),
 #   plot = p_guild_rev
 # )
 # 
 # ggsave(
-#   filename = here::here('data-raw','total_landings_old_comlandr.pdf'),
+#   filename = here::here('data-raw','total_landings_old_comlandr_ecodata.pdf'),
 #   plot = p_tot_land
 # )
 # 
 # ggsave(
-#   filename = here::here('data-raw','guild_landings_old_comlandr.pdf'),
+#   filename = here::here('data-raw','guild_landings_old_comlandr_ecodata.pdf'),
 #   plot = p_guild_land
 # )
