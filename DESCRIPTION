@@ -27,7 +27,8 @@ Imports:
     stringr,
     tidyr,
     sf,
-    vegan
+    vegan,
+    zoo
 Remotes:
   NOAA-EDAB/survdat,
   NOAA-EDAB/comlandr
