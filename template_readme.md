@@ -117,4 +117,18 @@ The rds file name is hardcoded as `bennet.rds` to match the `ecodata` package da
 
 ### comdat
 
+## Oceanographic Indicators
 
+### Transition Dates (trans_dates)
+
+To run the "workflow" below, it is assumed that the static input file from Kevin Friedland is present.
+
+*Note: the following function resides in the folder `data-raw` and is NOT part of the package*
+
+```
+workflow_trans_dates(inputPath, outputPath)
+```
+
+* `inputPath` is the path to static data set `EDAB_Datasets/TS_SHP_adv rep MAB GOM GBK NES SCSPoly.csv`.
+* `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
+The rds file name is hardcoded as `trans_dates.rds` to match the `ecodata` package dataset
