@@ -20,6 +20,7 @@ Imports:
     dplyr,
     data.table,
     survdat,
+    comlandr,
     geosphere,
     here,
     raster,
@@ -29,7 +30,9 @@ Imports:
     vegan,
     stocksmart,
     rlang,
-    utils
+    utils,
+    zoo
 Remotes:
   NOAA-EDAB/survdat
   NOAA-EDAB/stocksmart
+  NOAA-EDAB/comlandr

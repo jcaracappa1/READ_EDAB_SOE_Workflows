@@ -6,6 +6,9 @@ This repository is intended as a place to host any scripts or functions used wit
 
 To contribute an indicator workflow to this repo, please follow the steps below:
 
+-  Clone this repo
+-  Switch to `dev` branch and pull
+-  Build the package Ctrl + Shift + B
 -  Create branch off `dev` for your indicator. Name the branch the same name as your indicator
 -  Add a main wrapper workflow function in `data-raw` folder. Name it `workflow_<ecodata_dataset_name>.r`
     * This function should take only filepaths as arguments and should save the ecodata data set (see examples that already exist in the `data-raw` folder)
@@ -14,11 +17,13 @@ To contribute an indicator workflow to this repo, please follow the steps below:
     * This/these functions should be called from the `workflow_<ecodata_dataset_name>.r` function
 -  Use the `data-raw/example_test_runs.r` script to see how you might set up your functions.
     * All functions should only take file paths as arguments. All data dependencies should be read in by passing a file path to the data.
+-  Check that there is a `create_ecodata_dataset_name.Rd` file in the `man` folder. If not, run `devtools::document()` to create and commit one.
 -  Add any packages used to create the indicator in the `DESCRIPTION` file.
 -  Add instructions in the `tempate_readme.md` file (in the root of this repo)
+-  Final testing should be done inside your Rstudio container. (You'll need to repeat the first few steps; clone, pull, build)
 -  To test your workflow use the `example_test_runs.r` as a template.
 -  To test the R package, please build the package and then run `devtools::check()`, either from the command line or click the `check` button under the build tab in Rstudio
-   - If any errors or warnings arise (you can ignore `Notes`),  please try to fix them prior to creating a pull request
+   - If any errors arise (you can ignore `Notes` and `warnings`),  please try to fix them prior to creating a pull request
 -  When checks pass, create a pull request into the `dev` branch and assign two people as reviewers
 
 
