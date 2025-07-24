@@ -80,7 +80,7 @@ trans_dates <- dplyr::left_join(trans_dates,max_date,by=c("Location","Y")) |>
     dplyr::group_by(Time, EPU, Var) |>
     dplyr::summarise(Value = unique(Value)) |>
     dplyr::ungroup() |>
-    dplyr::mutate(EPU = recode(EPU,"GBK" = "GB"))
+    dplyr::mutate(EPU = dplyr::recode(EPU,"GBK" = "GB"))
   
   return(trans_dates)
   

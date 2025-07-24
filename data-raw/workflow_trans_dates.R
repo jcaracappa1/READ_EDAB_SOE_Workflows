@@ -1,6 +1,9 @@
 #' Calculates trans_dates data set for automated workflow
 #'
-#' This uses a static input file from Kevin Friedland.
+#' This uses a static input file from Kevin Friedland. 
+#' This is expected to be replaced by a dynamically-produced SST input file that
+#'  Kim H is tasked with. Scripts included here will be refactored to accept the 
+#'  new SST input when available.
 #' It is formatted exactly like the ecodata data object
 #'
 #' @param inputPath Character string. Full path to the SST input file from Kevin Friedland
