@@ -62,6 +62,7 @@ join_decoder <- function(data,
       names_to = "Var",
       values_to = "Value"
     ) |>
+    dplyr::mutate(Assessment.Year = as.integer(Assessment.Year)) |> 
     dplyr::rename(
       "Last assessment" = "Assessment.Year",
       "Stock" = "Entity.Name"
