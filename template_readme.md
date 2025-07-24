@@ -129,6 +129,6 @@ To run the "workflow" below, it is assumed that the static input file from Kevin
 workflow_trans_dates(inputPath, outputPath)
 ```
 
-* `inputPath` is the path to static data set `EDAB_Dev/beltz/TS_SHP_adv rep MAB GOM GBK NES SCSPoly.csv`.
+* `inputPath` is the path to static data set `EDAB_Datasets/TS_SHP_adv rep MAB GOM GBK NES SCSPoly.csv`.
 * `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
 The rds file name is hardcoded as `trans_dates.rds` to match the `ecodata` package dataset
