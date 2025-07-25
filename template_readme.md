@@ -117,6 +117,22 @@ The rds file name is hardcoded as `bennet.rds` to match the `ecodata` package da
 
 ### comdat
 
+
+## `stocksmart` Based Indicators
+
+To run the "workflow" below, it is assumed that the `stocksmart` R package has been updated to include recent assessment data.
+
+*Note: the following function resides in the folder `data-raw` and is NOT part of the package*
+
+```
+workflow_stock_status(inputPath, outputPath)
+```
+
+* `inputPath` is the path to static data set `EDAB_Datasets/decoder.csv`.
+* `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
+The rds file name is hardcoded as `stock_status.rds` to match the `ecodata` package dataset
+
+
 ## Oceanographic Indicators
 
 ### Transition Dates (trans_dates)
@@ -124,6 +140,7 @@ The rds file name is hardcoded as `bennet.rds` to match the `ecodata` package da
 To run the "workflow" below, it is assumed that the static input file from Kevin Friedland is present.
 
 *Note: the following function resides in the folder `data-raw` and is NOT part of the package*
+
 
 ```
 workflow_trans_dates(inputPath, outputPath)
