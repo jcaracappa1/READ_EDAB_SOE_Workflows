@@ -313,7 +313,7 @@ library(ecodata)
       
     old_menh24 <- data.table::rbindlist(list(mid.men, gom.men), use.names = T)
 
-## old menhaden 24----------------------------
+## old menhaden ----------------------------
     # using script from https://github.com/NOAA-EDAB/SOE_data/blob/main/R/create_comdat.R
     #Add Menhaden directly
     old_menh <- data.table::as.data.table(readRDS(old_menh_path))
@@ -348,7 +348,47 @@ library(ecodata)
     
     old_menh <- data.table::rbindlist(list(mid.men, gom.men), use.names = T)    
     
-## combining old and new for plotting --------------------
+    
+    
+## sg_menh ---------------------------------------------------------
+    # created menhadenEOF_SG.rds using Sarah's script as a template
+    # get_menhaden.R
+    #Add Menhaden directly
+    sg_menh <- data.table::as.data.table(readRDS("/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF_SG.rds"))
+    #Get in same format as comland
+    #Mid-Atlantic
+    mid.men <- sg_menh[, list(year, MABcatch)]
+    data.table::setnames(mid.men, c('year', 'MABcatch'), c('YEAR', 'SPPLIVMT'))
+    mid.men[, MONTH := 1]
+    mid.men[, NESPP3 := 221]
+    mid.men[, NEGEAR := 0] #Double check
+    mid.men[, TONCL2 := NA] #Double check
+    mid.men[, EPU := 'MAB']
+    mid.men[, UTILCD := 9]
+    mid.men[, MARKET_CODE := 'UN']
+    mid.men[, MESHCAT := NA]
+    mid.men[, SPPVALUE := 0]
+    mid.men[, US := T]
+    
+    #GOM
+    gom.men <- sg_menh[, list(year, GOMcatch)]
+    data.table::setnames(gom.men, c('year', 'GOMcatch'), c('YEAR', 'SPPLIVMT'))
+    gom.men[, NESPP3 := 221]
+    gom.men[, MONTH := 1]
+    gom.men[, NEGEAR := 0]
+    gom.men[, TONCL2 := NA]
+    gom.men[, EPU := 'GOM']
+    gom.men[, UTILCD := 7]
+    gom.men[, MARKET_CODE := 'UN']
+    gom.men[, MESHCAT := NA]
+    gom.men[, SPPVALUE := 0]
+    gom.men[, US := T]
+    
+    sg_menh <- data.table::rbindlist(list(mid.men, gom.men), use.names = T)    
+    
+    
+    
+## combining menh sources for plotting --------------------
     
     menh_comp_max <- menhaden_max |> 
                         dplyr::mutate(source = 'excel_from_scott')
@@ -358,8 +398,11 @@ library(ecodata)
     
     menh_comp_old <- old_menh |> 
       dplyr::mutate(source = 'menhadenEOF.rds')
+    
+    menh_comp_sg <- sg_menh |> 
+      dplyr::mutate(source = 'get_menhaden.R')
 
-    menh_comp_combined <- dplyr::bind_rows(menh_comp_max, menh_comp_old)    
+    menh_comp_combined <- dplyr::bind_rows(menh_comp_old, menh_comp_sg)    
 
 ## plot time series -----------------------------
     
@@ -379,6 +422,25 @@ library(ecodata)
     #   filename = here::here('data-raw','menhaden_data.pdf'),
     #                         plot = plot_menh_compare
     # )
+    
+    
+    
+## menhadenEOF.rds comparison ---------------------------
+    
+# create_comdat.R used menhadenEOF.rds as menhaden input
+# Sarah shared the script and input data which creates that file
+# I created menhadenEOF_SG.rds using that script
+# here I compare to last year's menhadenEOF.rds to make sure I am getting the same outputs
+    
+    
+24menh <- 
+    
+    
+    
+    
+    
+    
+    
     
 # Revenue investigation -----------------------
     
