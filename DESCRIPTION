@@ -33,6 +33,6 @@ Imports:
     utils,
     zoo
 Remotes:
-  NOAA-EDAB/survdat
-  NOAA-EDAB/stocksmart
+  NOAA-EDAB/survdat,
+  NOAA-EDAB/stocksmart,
   NOAA-EDAB/comlandr
