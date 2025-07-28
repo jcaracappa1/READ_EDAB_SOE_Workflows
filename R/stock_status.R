@@ -10,7 +10,7 @@
 #' @export
 
 create_stock_status <- function(data = stocksmart::stockAssessmentSummary,
-                                decode = utils::read.csv(here::here("data-raw/2024decoder.csv"))) {
+                                decode) {
   # this will wrangle stocksmart data only (not PDB data)
   if ("Science Center" %in% names(data)) {
     data <- data |>
@@ -49,7 +49,7 @@ create_stock_status <- function(data = stocksmart::stockAssessmentSummary,
 #' @export
 
 join_decoder <- function(data,
-                         decoder = utils::read.csv(here::here("data-raw/2024decoder.csv"))) {
+                         decoder) {
   output <- data |>
     dplyr::group_by(.data$Entity.Name) |>
     dplyr::filter(.data$Assessment.Year == max(.data$Assessment.Year)) |>
