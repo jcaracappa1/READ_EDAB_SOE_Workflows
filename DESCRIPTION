@@ -28,7 +28,11 @@ Imports:
     tidyr,
     sf,
     vegan,
+    stocksmart,
+    rlang,
+    utils,
     zoo
 Remotes:
   NOAA-EDAB/survdat,
+  NOAA-EDAB/stocksmart,
   NOAA-EDAB/comlandr
