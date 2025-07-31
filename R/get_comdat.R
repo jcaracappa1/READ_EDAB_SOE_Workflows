@@ -1,144 +1,5 @@
-#' # get_nafo_21a_soe -------------------
-#' 
-#' #' Process NAFO 21A Catch Data
-#' #'
-#' #' @description
-#' #' Reads NAFO 21A catch data, joins it with EPU (Ecological Production Unit)
-#' #' spatial data, and attaches NAFO species codes. Landings from the USA are
-#' #' excluded from the final summary.
-#' #'
-#' #' This function was created to supplement NAFO 21B data, which concluded in 2018.
-#' #' 
-#' #' Using as a template: https://github.com/NOAA-EDAB/SOE_data/blob/main/R/get_nafo_21a_soe.R
-#' #'
-#' #' @param path_to_files A character string providing the full file path to the
-#' #'   NAFO 21A catch CSV file.
-#' #' @param create_plot A boolean value. If `TRUE`, a ggplot object summarizing
-#' #'   catch by EPU over time is generated and returned.
-#' #'
-#' #' @return A list containing two objects:
-#' #' \describe{
-#' #'   \item{data}{A data frame with columns: `Year`, `EPU`, `Species`, `Code`,
-#' #'   `Abbreviation`, and total catch in `MT` (Metric Tons).}
-#' #'   \item{plot}{A ggplot object if `create_plot = TRUE`; otherwise, `NULL`.}
-#' #' }
-#' #'
-#' #' @section Source:
-#' #' NAFO data files are sourced from nafo.int.
-#' #' - Catch Data: 21A Database (https://www.nafo.int/Data/STATLANT-21A)
-#' #' - Supporting Files: 21B Database (https://www.nafo.int/Data/Catch-Statistics-STATLANT-21B)
-#' #' 
-#' #' @importFrom dplyr rename select filter left_join group_by summarise
-#' #' @importFrom ggplot2 ggplot aes geom_line labs theme_minimal
-#' #' @importFrom readr read_csv read_delim
-#' #' @importFrom tibble tribble
-#' #' @importFrom tidyr separate
-#' #' @importFrom utils download.file
-#' #'
-#' #' @export
-#' 
-#' process_nafo_catch_data <- function(path_to_files = NULL, create_plot = FALSE) {
-#'   
-#'   # 1. Input Validation ----
-#'   if (is.null(path_to_files)) {
-#'     stop("Error: Please provide a valid file path for the NAFO 21A catch data via the 'path_to_files' argument.")
-#'   }
-#'   
-#'   # 2. Define Helper Data and Constants ----
-#'   # Map NAFO division codes to corresponding Ecological Production Units (EPUs)
-#'   epu_division_map <- tibble::tribble(
-#'     ~EPU,   ~AreaCode,
-#'     "SS",   47,
-#'     "GOM",  51, "GOM", 52, "GOM", 53, "GOM", 54, "GOM", 55, "GOM", 56,
-#'     "GB",   61, "GB", 62, "GB", 63,
-#'     "MAB",  61, "MAB", 62, "MAB", 63
-#'   )
-#'   
-#'   # 3. Download and Read NAFO Supporting Data ----
-#'  # Will want a hard copy at some point for reproducibility
-#'   # a change in URL would break this script currently
-#'   nafo_zip_url <- "https://www.nafo.int/Portals/0/Stats/nafo-21b-2010-18.zip"
-#'   temp_zip_file <- tempfile(fileext = ".zip")
-#'   
-#'   # Use a try-catch block for download in case of network issues
-#'   tryCatch({
-#'     download.file(nafo_zip_url, destfile = temp_zip_file, quiet = TRUE, mode = "wb")
-#'   }, error = function(e) {
-#'     stop(paste0("Failed to download NAFO supporting data from '", nafo_zip_url, "'. Error: ", e$message))
-#'   })
-#'   
-#'   # Extract files from the downloaded zip
-#'   unzip_dir <- tempdir()
-#'   unzip(temp_zip_file, exdir = unzip_dir, junkpaths = TRUE) # junkpaths extracts to unzip_dir directly
-#'   
-#'   # Paths to extracted files
-#'   divisions_file <- file.path(unzip_dir, "divisions.txt")
-#'   species_file <- file.path(unzip_dir, "species.txt")
-#'   
-#'   if (!file.exists(divisions_file) || !file.exists(species_file)) {
-#'     stop("Required supporting files (divisions.txt or species.txt) not found in the downloaded NAFO zip.")
-#'   }
-#'   
-#'   # Read NAFO Division Codes
-#'   divisions <- readr::read_csv(
-#'     divisions_file,
-#'     col_names = c("AreaCode", "Div"), # Explicitly name columns
-#'     show_col_types = FALSE
-#'   )
-#'   
-#'   # Read NAFO Species Codes
-#'   nafo_species <- readr::read_delim(
-#'     species_file,
-#'     delim = "\t",
-#'     show_col_types = FALSE
-#'   ) |>
-#'     tibble::as_tibble() |>
-#'     dplyr::rename(Species = "Longname") |> # Renamed "Longname" to "Species"
-#'     dplyr::select(Code, Abbreviation, Species) |>
-#'     dplyr::filter(Code > 3) # Original script filter
-#'   
-#'   # Clean up temporary files
-#'   unlink(temp_zip_file)
-#'   unlink(file.path(unzip_dir, c("divisions.txt", "species.txt"))) # Clean up extracted files
-#'   
-#'   
-#'   #  4. Read and Process NAFO 21A Catch Data ----
-#'   nafo_catch_data <- readr::read_csv(input_path_to_files, show_col_types = FALSE) |>
-#'     dplyr::left_join(divisions, by = c("Division" = "Div")) |>
-#'     dplyr::rename(SpeciesName = `Species Name`, MT = `Metric Tonnes`) |>
-#'     tidyr::separate(col = SpeciesName, into = c("Species", "Abbreviation"), sep = " - ", remove = FALSE) |> # Keep SpeciesName for now if needed, but remove=FALSE will retain it
-#'     dplyr::filter(!grepl("USA", Country)) |> # Remove USA landings
-#'     dplyr::filter(AreaCode %in% neus_area_codes$AreaCode) |> # Filter to NEUS relevant areas
-#'     dplyr::left_join(neus_area_codes, by = "AreaCode") |>
-#'     dplyr::left_join(nafo_species, by = c("Abbreviation", "Species")) |> # Join with NAFO species info
-#'     dplyr::group_by(Year, EPU, Species, Code, Abbreviation) |>
-#'     dplyr::summarise(MT = sum(MT, na.rm = TRUE), .groups = "drop") |>
-#'     dplyr::arrange(Year, EPU, Species) # Order for consistent output
-#'   
-#'   # 5. Generate Plot (if requested) ----
-#'   p_output <- NULL
-#'   if (plot_summary) {
-#'     agg_nafo_for_plot <- nafo_catch_data |>
-#'       dplyr::group_by(Year, EPU) |>
-#'       dplyr::summarise(MT = sum(MT, na.rm = TRUE), .groups = "drop")
-#'     
-#'     p_output <- ggplot2::ggplot(data = agg_nafo_for_plot) +
-#'       ggplot2::geom_line(ggplot2::aes(x = Year, y = MT, color = EPU)) +
-#'       ggplot2::labs(
-#'         title = "NAFO Catch Data by EPU (excluding USA)",
-#'         x = "Year",
-#'         y = "Metric Tons (MT)",
-#'         color = "EPU"
-#'       ) +
-#'       ggplot2::theme_minimal()
-#'   }
-#'   
-#'   #  6. Return Results ----
-#'   return(list(data = nafo_catch_data, plot = p_output))
-#' }
 
-
-# helper function(s) ---------------
+# helper function ---------------
 
 #' Helper function for the summaries in create_comdat
 #' 
@@ -184,7 +45,7 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 #' @param report_year The year of the SOE report (e.g., 2025).
 #' @param end_year The last year of data to include.
 #' @param input_path_species Path to the 'SOE_species_list_24.RData' file.
-#' @param menhaden_path Path to the menhaden data from SEFSC.
+#' @param menhaden_path Path to the menhaden data output by data-raw/create_menhaden_input.R
 #' @param save_to_file Boolean. If TRUE, saves the final output to disk.
 #'
 #' @return A single tibble containing all summarized commercial data.
@@ -233,6 +94,7 @@ create_comdat <- function(comdat_path,
   
   # 2. Load and Process All Data Sources ----
   
+##comlandr data -------------
   # Load commercial data
   comland_list <- readRDS(comdat_path)
   
@@ -240,50 +102,47 @@ create_comdat <- function(comdat_path,
     tibble::as_tibble() |>
     dplyr::filter(NESPP3 != 221, NESPP3 != 789) # Remove Menhaden and Eastern Oyster
   
-  # # Load NAFO foreign landings
-  # 
-  # source(here::here("R/get_nafo_21a_soe.r"))
-  # 
-  # nafo_landings <- get_nafo_21a_soe(pathToFiles = nafo_path, isplot = FALSE)$data |>
-  #   dplyr::filter(Year > 2018, EPU != "SS") |>
-  #   dplyr::group_by(Year, EPU) |>
-  #   dplyr::summarise(SPPLIVMT = sum(MT, na.rm = TRUE), .groups = "drop") |>
-  #   dplyr::mutate(
-  #     SOE.24 = "Other", Fed.Managed = NA, US = FALSE, SPPVALUE = 0,
-  #     NESPP3 = 999 # Assign a code for "other foreign landings"
-  #   ) |>
-  #   dplyr::rename(YEAR = Year)
+## menhaden data -------------
+  # Read in and tidy Menhaden data
+  menhaden_data <- readRDS(here::here(menhaden_path)) |>
+    as_tibble() |>
+    # Reshape the data from wide to long format.
+    # This creates one row per EPU per year, which is much easier to work with.
+    tidyr::pivot_longer(
+      cols = c(MABcatch, GOMcatch),
+      names_to = "EPU",
+      values_to = "SPPLIVMT"
+    )
   
-  # Load Menhaden data
-
-  ## call in raw data
-  ### remove header rows with meta data
-menh <- readxl::read_excel(menhaden_path, sheet = 1, skip = 6)
+  menhaden_processed <- menhaden_data |>
+    mutate(
+      # Clean the EPU name by removing "catch"
+      EPU = sub("catch", "", EPU),
+      # Rename 'year' to 'YEAR' for consistency
+      YEAR = year,
+      # Add all the new columns with their constant or conditional values
+      MONTH = 1,
+      NESPP3 = 221,
+      NEGEAR = 0,
+      TONCL2 = NA,
+      # Use case_when() to assign UTILCD based on the EPU
+      UTILCD = case_when(
+        EPU == "MAB" ~ 9,
+        EPU == "GOM" ~ 7,
+        TRUE ~ NA_real_ # A fallback for any other cases
+      ),
+      MARKET_CODE = 'UN',
+      MESHCAT = NA,
+      SPPVALUE = 0,
+      US = TRUE
+    ) |>
+    # Select only the columns you need in the final desired order
+    select(
+      YEAR, MONTH, EPU, NESPP3, SPPLIVMT, SPPVALUE,
+      NEGEAR, TONCL2, UTILCD, MARKET_CODE, MESHCAT, US
+    )
   
-  ## Mid-Atlantic  
-mid.men <- menh |>
-  dplyr::select(1, 5) |> 
-  # Now rename the columns to something clean and predictable
-  dplyr::rename(YEAR = 1, SPPLIVMT = 2) |>
-  dplyr::mutate(MONTH = 1, NESPP3 = 221, NEGEAR = 0, TONCL2 = NA, EPU = 'MAB', UTILCD = 9,
-                MARKET_CODE = 'UN', MESHCAT = NA, SPPVALUE = 0, US = T)
-    
-    
-    
-  ## GOM
-gom.men <- menh |>
-  dplyr::select(1, 6) |>
-  # Rename the columns
-  dplyr::rename(YEAR = 1, SPPLIVMT = 2) |>
-  dplyr::mutate(NESPP3 = 221, MONTH = 1, NEGEAR = 0, TONCL2 = NA, EPU = 'GOM',
-                UTILCD = 7, MARKET_CODE = 'UN', MESHCAT = NA,
-                SPPVALUE = 0, US = T)
-  
-  
-  ## combine mid.men and gom.men
-    menhaden_data <- dplyr::bind_rows(mid.men, gom.men)
-    
-  
+## species list ---------------
   # Load species list for grouping
   species <- readRDS(input_path_species) # Loads object `species`
   species_codes <- species |>
@@ -292,7 +151,7 @@ gom.men <- menh |>
     dplyr::distinct()
   
   # 3. Combine and Clean Base Data ----
-  base_data <- dplyr::bind_rows(comland_raw, menhaden_data) |>
+  base_data <- dplyr::bind_rows(comland_raw, menhaden_processed) |>
     dplyr::mutate(NESPP3 = as.numeric(NESPP3)) |>
     dplyr::left_join(species_codes, by = "NESPP3") |>
     dplyr::mutate(
