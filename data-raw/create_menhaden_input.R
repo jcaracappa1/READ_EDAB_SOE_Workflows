@@ -20,7 +20,7 @@
 
 # Reduction fishery from Ray Mroch, split to VA-RI (MAB) and MA-ME (GOM):
 #   Updated with 2022 and 2023 data by Sydney Alhale - NOAA Federal <sydney.alhale@noaa.gov>
-  
+
 library(readxl)
 library(dplyr)
 
@@ -118,7 +118,7 @@ baitKA <-dplyr::bind_rows(baitKA,
 # Menhaden landings do not appear in posted MA data prior to 2013 (goes back to 2007). 
 # 
 # But we do have GOM landings from ACCSP prior that do not appear in ME landings below. So use them?
-  
+
 # MA menhaden ---------------
 
 # by hand cut and paste from https://www.mass.gov/media/1486/download for 2013-2016
@@ -179,17 +179,18 @@ MEbait19502023 <- data.frame(year = year[-1], tons=tons[-1])
 
 # 2023 updated landings 2018-2022 https://www.maine.gov/dmr/sites/maine.gov.dmr/files/inline-files/LandingsBySpecies.Table_.pdf
 
-# landings online don't match what Sarah had. Leaving for now
+# MG updated this in 2025. Values changed slightly and now only go back to 2020
 
-MEbait20182022 <- data.frame(year = c(2018:2022),
-                             lbs = c(14816783, #2018
-                                     25158042, #2019
-                                     27046212, #2020
-                                     24109628, #2021
-                                     22387654) #2022 prelim
+MEbait20202024 <- data.frame(year = c(2020:2024),
+                             lbs = c(
+                                     27172212, #2020
+                                     24156872, #2021
+                                     25947085, #2022
+                                     26414423, #2023
+                                     25638230) #2024 prelim
 )
 
-MEbait20182022$MEtons = MEbait20182022$lbs * lbstotons
+MEbait20202024$MEtons = MEbait20202024$lbs * lbstotons
 
 #MEtot <- data.frame(year = year,
 #                    MEtons = tons)
@@ -256,7 +257,7 @@ Reg.ACCSP <- ACCSPcomp |>
   dplyr::left_join(reductiontons, by=c("Year"="year")) |>
   dplyr::mutate(MAB.ACCSP = MAB.ACCSP-MAB) |> # subtract reduction catch from ACCSP MAB catch to get bait MAB
   dplyr::select(Year, GOM.ACCSP, MAB.ACCSP)
-  
+
 # as with 2022, sub in ACCSP 2023 for MEVAbait.tons
 baitKA <-dplyr::bind_rows(baitKA,
                           c(year = 2023,
@@ -282,7 +283,7 @@ menhadencatch <- reductiontons  |>
                              # ~ sum(MEbait, MAtons, na.rm = TRUE),
                              TRUE ~ GOM.ACCSP))  |> 
   mutate(MABbait = case_when(MEVAbait.tons - GOMbait >= 0 ~ MEVAbait.tons - GOMbait,
-                            MEVAbait.tons - GOMbait < 0 ~0))  |> 
+                             MEVAbait.tons - GOMbait < 0 ~0))  |> 
   mutate(NEUScatch = sum(NEUS, GOMbait, MABbait, na.rm=TRUE),
          MABcatch = sum(MAB, MABbait, na.rm = TRUE),
          GOMcatch = sum(GOM, GOMbait, na.rm = TRUE))
@@ -292,16 +293,16 @@ menhadencatch <- reductiontons  |>
 # Anything falling off a cliff in the final year?
 
 ggplot2::ggplot(menhadencatch, ggplot2::aes(x = year, y=NEUScatch)) +
-    ggplot2::geom_line() +
+  ggplot2::geom_line() +
   ggplot2::geom_line(ggplot2::aes(x = year, y = GOM), col="blue") +
   ggplot2::geom_line(ggplot2::aes(x = year, y = MAB), col="green") +
   ggplot2::geom_line(ggplot2::aes(x = year, y = NEUS), col="purple") +
   ggplot2::ggtitle("Reduction") +
   ggplot2::theme_bw()
-  
-  
+
+
 ggplot2::ggplot(menhadencatch, ggplot2::aes(x = year, y=NEUScatch)) +
-    ggplot2::geom_line() +
+  ggplot2::geom_line() +
   ggplot2::geom_line(ggplot2::aes(x = year, y = GOMbait), col="blue") +
   ggplot2::geom_line(ggplot2::aes(x = year, y = MABbait), col="green") +
   
@@ -322,7 +323,7 @@ ggplot2::ggplot(menhadencatch, ggplot2::aes(x = year, y=NEUScatch)) +
 menhadenEOF <- menhadencatch  |> 
   dplyr::select(year, NEUScatch, MABcatch, GOMcatch, units)
 
-saveRDS(menhadenEOF,"/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF_SG.rds")
+saveRDS(menhadenEOF,"/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds")
 
 
 # This R data object will be transferred securely to Andy Beet for incorporation into the Ecosystem Overfishing indicators.
@@ -330,7 +331,7 @@ saveRDS(menhadenEOF,"/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF_SG.rds")
 # Plot total catch black, MABcatch green, GOMcatch blue
 
 ggplot2::ggplot(menhadenEOF, ggplot2::aes(x = year, y=NEUScatch)) +
-    ggplot2::geom_line() +
+  ggplot2::geom_line() +
   ggplot2::geom_line(ggplot2::aes(x = year, y = GOMcatch), col="blue") +
   ggplot2::geom_line(ggplot2::aes(x = year, y = MABcatch), col="green") +
   ggplot2::theme_bw()
