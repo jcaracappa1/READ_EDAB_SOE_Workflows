@@ -9,11 +9,11 @@ input_path_species <- "/home/mgrezlik/EDAB_Datasets/SOE_species_list_24.rds"
 inputPathAlbatross <- "/home/mgrezlik/EDAB_Dev/beet/albatrossData.rds"
 inputPathBigelow <- "/home/mgrezlik/EDAB_Dev/beet/bigelowData.rds"
 staticPath <-  "/home/mgrezlik/EDAB_Resources/"
-menhaden_path <- "/home/mgrezlik/EDAB_Datasets/AM Landings by Gaichas Regions 1967-2024.xlsx"
+menhaden_path <- "/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds"
 comdat_path <- '/home/mgrezlik/EDAB_Dev/beet/commercial_comdat.rds'
 comland_old_path <- '/home/mgrezlik/EDAB_Dev/beet/comlandr_old.rds'
-old_menh_path24 <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF2024.rds'
-old_menh_path <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds'
+# old_menh_path24 <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF2024.rds'
+# old_menh_path <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds'
 old_comdat_path <- '/home/mgrezlik/EDAB_Dev/grezlik/Commercial_data_pull_25.RData'
 
 
@@ -35,7 +35,7 @@ commercial_summary <- create_comdat(
   report_year = 2025,
   end_year = 2024,
   input_path_species <- "/home/mgrezlik/EDAB_Datasets/SOE_species_list_24.rds",
-  menhaden_path <- "/home/mgrezlik/EDAB_Datasets/AM Landings by Gaichas Regions 1967-2024.xlsx"
+  menhaden_path <- "/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds"
 )
 
 comdat <- get_comdat(
@@ -91,6 +91,8 @@ library(ecodata)
         feeding.guild = str_extract(Var, "^\\w+"),
         grouping = "Total"
       )
+    
+setup <- ecodata::plot_setup(shadedRegion = NULL, report = 'MidAtlantic')    
     
     managed_landings <- comdat_compare |>
       dplyr::filter(
@@ -419,21 +421,10 @@ library(ecodata)
 
 ## saving plot -----------
     # ggsave(
-    #   filename = here::here('data-raw','menhaden_data.pdf'),
+    #   filename = here::here('data-raw','menhaden_input_data_check.pdf'),
     #                         plot = plot_menh_compare
     # )
     
-    
-    
-## menhadenEOF.rds comparison ---------------------------
-    
-# create_comdat.R used menhadenEOF.rds as menhaden input
-# Sarah shared the script and input data which creates that file
-# I created menhadenEOF_SG.rds using that script
-# here I compare to last year's menhadenEOF.rds to make sure I am getting the same outputs
-    
-    
-24menh <- 
     
     
     
