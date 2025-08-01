@@ -12,8 +12,8 @@ staticPath <-  "/home/mgrezlik/EDAB_Resources/"
 menhaden_path <- "/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds"
 comdat_path <- '/home/mgrezlik/EDAB_Dev/beet/commercial_comdat.rds'
 comland_old_path <- '/home/mgrezlik/EDAB_Dev/beet/comlandr_old.rds'
-# old_menh_path24 <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF2024.rds'
-# old_menh_path <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds'
+old_menh_path24 <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF2024.rds'
+old_menh_path <- '/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds'
 old_comdat_path <- '/home/mgrezlik/EDAB_Dev/grezlik/Commercial_data_pull_25.RData'
 
 
@@ -402,7 +402,7 @@ setup <- ecodata::plot_setup(shadedRegion = NULL, report = 'MidAtlantic')
       dplyr::mutate(source = 'menhadenEOF.rds')
     
     menh_comp_sg <- sg_menh |> 
-      dplyr::mutate(source = 'get_menhaden.R')
+      dplyr::mutate(source = 'create_menhaden_input.R')
 
     menh_comp_combined <- dplyr::bind_rows(menh_comp_old, menh_comp_sg)    
 
