@@ -22,10 +22,10 @@
 #' @examples
 #' \dontrun{
 #'   # Define paths
-#'   outputPath <- here::here("data-raw", "indicators")
-#'   inputComdatPath <- here::here("data-raw", "data", "commercial_comdat.rds")
-#'   inputSpeciesPath <- here::here("data-raw", "data", "SOE_species_list_24.rds")
-#'   inputMenhadenPath <- here::here("data-raw", "data", "menhaden_landings.rds")
+#'   outputPath <- "/home/mgrezlik/EDAB_Dev/grezlik"
+#'   input_path_commercial_comdat <- "/home/mgrezlik/EDAB_Dev/beet/commercial_comdat.rds"
+#'   input_path_species <- "/home/mgrezlik/EDAB_Datasets/SOE_species_list_24.rds"
+#'   menhaden_path <- "/home/mgrezlik/EDAB_Dev/grezlik/menhadenEOF.rds"
 #'
 #'   # Run the workflow
 #'   workflow_comdat(
