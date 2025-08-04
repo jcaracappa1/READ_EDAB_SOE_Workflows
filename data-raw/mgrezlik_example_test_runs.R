@@ -18,6 +18,7 @@ old_comdat_path <- '/home/mgrezlik/EDAB_Dev/grezlik/Commercial_data_pull_25.RDat
 
 
 source(here::here("data-raw/workflow_species_dist.R"))
+source(here::here('data-raw/workflow_comdat.R'))
 
 # channel <- dbutils::connect_to_database("NEFSC_USERS","mgrezlik")
 
