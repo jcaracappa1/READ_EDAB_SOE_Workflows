@@ -6,8 +6,6 @@
 #' @param input_path_species Character string. Full path to the species list data pull rds file
 #' @param outputPathDataSets Character string. Path to folder where data pull should be saved
 #' @param menhaden_path Character string. Full path to the menhaden data .rds file
-#' @param report_year Numeric. The year of the State of the Ecosystem report (e.g., 2025)
-#' @param end_year Numeric. The last year of data to include in the analysis (e.g., 2024)
 #'
 #' @example
 #' \dontrun{
@@ -15,8 +13,6 @@
 #' workflow_comdat(comdat_path = "path/to/commerical_comdat.rds",
 #'                       input_path_species = "path/to/species/data/.rds",
 #'                       menhaden_path = "path/to/menhaden/data/.rds",
-#'                       report_year = 2025
-#'                       end_year = 2024
 #'                       outputPathDataSets = "path/to/output/folder")
 #'
 #' }
@@ -34,8 +30,6 @@
 
 
 workflow_comdat <- function(comdat_path,
-                            report_year,
-                            end_year,
                             input_path_species,
                             menhaden_path,
                             outputPathDataSets = NULL) {

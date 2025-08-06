@@ -42,8 +42,6 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 #' summary of landings and revenue metrics for the State of the Ecosystem report.
 #'
 #' @param comdat_path Character string. Path to commercial_comdat.rds
-#' @param report_year Numeric. The year of the SOE report (e.g., 2025).
-#' @param end_year Numeric. The last year of data to include.
 #' @param input_path_species Character string. Path to the 'SOE_species_list_24.RData' file.
 #' @param menhaden_path Character string. Path to the menhaden data output by data-raw/create_menhaden_input.R
 #' @param outputPathDataSets Character string. Path to folder where data pull should be saved
@@ -63,8 +61,6 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 #' @export
 
 get_comdat <- function(comdat_path,
-                          report_year,
-                          end_year,
                           input_path_species,
                           menhaden_path,
                           outputPathDataSets) {
