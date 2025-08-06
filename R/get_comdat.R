@@ -155,7 +155,7 @@ create_comdat <- function(comdat_path,
     dplyr::mutate(NESPP3 = as.numeric(NESPP3)) |>
     dplyr::left_join(species_codes, by = "NESPP3") |>
     dplyr::mutate(
-      EPU = ifelse(is.na(EPU), "Other", EPU),
+      EPU = ifelse(is.na(EPU), "OTHER", EPU),
       SOE.24 = ifelse(is.na(SOE.24), "Other", SOE.24),
       Fed.Managed = ifelse(is.na(Fed.Managed), "Other", Fed.Managed),
       # Correct scallop weight for foreign landings
