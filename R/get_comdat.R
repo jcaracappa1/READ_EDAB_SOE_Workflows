@@ -1,7 +1,7 @@
 
 # helper function ---------------
 
-#' Helper function for the summaries in create_comdat
+#' Helper function for the summaries in get_comdat
 #' 
 #' @param data specify if all data, US only, seafood only should be used
 #' @param metric_name metric to be summarized
@@ -34,19 +34,19 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 
 
 
-# create_comdat -------------------
+# get_comdat -------------------
 
 #' Create data for ecodata::comdat 
 #'
 #' Processes and combines commercial landings and Menhaden data to produce a 
 #' summary of landings and revenue metrics for the State of the Ecosystem report.
 #'
-#' @param comdat_path Path to commercial_comdat.rds
-#' @param report_year The year of the SOE report (e.g., 2025).
-#' @param end_year The last year of data to include.
-#' @param input_path_species Path to the 'SOE_species_list_24.RData' file.
-#' @param menhaden_path Path to the menhaden data output by data-raw/create_menhaden_input.R
-#' @param save_to_file Boolean. If TRUE, saves the final output to disk.
+#' @param comdat_path Character string. Path to commercial_comdat.rds
+#' @param report_year Numeric. The year of the SOE report (e.g., 2025).
+#' @param end_year Numeric. The last year of data to include.
+#' @param input_path_species Character string. Path to the 'SOE_species_list_24.RData' file.
+#' @param menhaden_path Character string. Path to the menhaden data output by data-raw/create_menhaden_input.R
+#' @param outputPathDataSets Character string. Path to folder where data pull should be saved
 #'
 #' @return A single tibble containing all summarized commercial data.
 #' 
@@ -62,18 +62,16 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 #'
 #' @export
 
-create_comdat <- function(comdat_path,
+get_comdat <- function(comdat_path,
                           report_year,
                           end_year,
                           input_path_species,
                           menhaden_path,
-                          save_to_file = FALSE) {
+                          outputPathDataSets) {
   
   
   # Check if the input files exist ---------------------------
-  if (file.exists(comdat_path) && file.exists(input_path_species) && file.exists(menhaden_path)) {
-    
-  } else {
+  if (!(file.exists(comdat_path) && file.exists(input_path_species) && file.exists(menhaden_path))) {
     stop("One or more of the input files are not present in the location specified")
   }
   
@@ -186,53 +184,8 @@ create_comdat <- function(comdat_path,
     seafood
   )
   
-  if (save_to_file) {
-    yr <- substring(report_year, 3, 4)
-    save_path <- here::here("data-raw", paste0("Commercial_data_pull_", yr, ".rds"))
-    saveRDS(commercial_summary, file = save_path)
-    # Also save to the data/ folder for package use
-    usethis::use_data(commercial_summary, overwrite = TRUE)
-  }
-  
-  return(commercial_summary)
-}
-
-# get_comdat ------------------
-
-
-
-#' Finalize Commercial Data for ecodata Submission
-#'
-#' @description
-#' Takes a processed commercial data summary, performs final cleaning, and
-#' attaches the required metadata attributes for inclusion in the `ecodata`
-#' package. This is the final step in the data preparation pipeline.
-#' 
-#' @param processed_comdat A data frame. This should be the output from the
-#'   `create_commercial_data_summary()` function.
-#' @param save_for_package A boolean value. If `TRUE`, the final data object is
-#'   saved as `comdat.rda` in the `data/` directory. If `FALSE` (the default),
-#'   the function returns the data frame.
-#'
-#' @return If `save_for_package = FALSE`, returns a tibble with the final,
-#'   cleaned commercial data. If `TRUE`, saves the data and returns nothing.
-#'
-#' @section Source:
-#' More information about these data are available at
-#' https://noaa-edab.github.io/tech-doc/comdat.html
-#'
-#' @importFrom dplyr rename select arrange
-#' @importFrom tibble as_tibble
-#' @importFrom usethis use_data
-#'
-#' @export
-
-get_comdat <- function(processed_comdat, save_for_package = FALSE) {
-  
-  # 1. Final Cleaning and Formatting ----
-  # The input data is already mostly clean. This step just ensures the
-  # final column names and order are correct.
-  comdat <- processed_comdat |>
+  # 6. Renaming step from get_comdat ----------
+ comdat <-  commercial_summary |>
     # The final object in `ecodata` uses 'EPU' instead of 'Region'
     dplyr::rename(EPU = Region) |>
     # Select and arrange the final columns required for the package
@@ -240,33 +193,13 @@ get_comdat <- function(processed_comdat, save_for_package = FALSE) {
     dplyr::arrange(Var, Time) |>
     tibble::as_tibble()
   
-  # 2. Attach Metadata as Attributes ----
-  # This metadata is crucial for data provenance within the ecodata package.
-  attr(comdat, "tech-doc_url") <- "https://noaa-edab.github.io/tech-doc/comdat.html"
   
-  # Dynamically get the name of the input object for the metadata
-  input_object_name <- deparse(substitute(processed_comdat))
-  attr(comdat, "data_files")   <- list(source_object = paste0(input_object_name, ".rds"))
   
-  attr(comdat, "data_steward") <- "Sean Lucey <sean.lucey@noaa.gov>"
-  attr(comdat, "plot_script")  <- list(
-    `hd_MAB_comm-revenue` = "human_dimensions_MAB.Rmd-comdat-comm-revenue.R",
-    `hd_MAB_commercial-landings` = "human_dimensions_MAB.Rmd-comdat-commercial-landings.R",
-    `hd_MAB_total-landings` = "human_dimensions_MAB.Rmd-comdat-total-landings.R",
-    `hd_NE_comm-revenue` = "human_dimensions_NE.Rmd-comdat-comm-revenue.R",
-    `hd_NE_commercial-landings` = "human_dimensions_NE.Rmd-comdat-commercial-landings.R",
-    `hd_NE_commercial-landings-gb` = "human_dimensions_NE.Rmd-comdat-commercial-landings-gb.R",
-    `hd_NE_commercial-landings-gom` = "human_dimensions_NE.Rmd-comdat-commercial-landings-gom.R",
-    `hd_NE_total-landings` = "human_dimensions_NE.Rmd-comdat-total-landings.R"
-  )
-  
-  # 3. Save or Return Data ----
-  if (save_for_package) {
-    # Save the data object 'comdat' to the data/ folder for use in a package
-    usethis::use_data(comdat, overwrite = TRUE)
-    message("Final data object 'comdat' saved to the 'data/' directory.")
-  } else {
-    # Return the final data frame
-    return(comdat)
+# Save or return data --------------  
+  if (!is.null(outputPathDataSets)) {
+    saveRDS(comdat, file.path(outputPathDataSets, "comdat.rds"))
   }
+  
+  return(comdat)
 }
+
