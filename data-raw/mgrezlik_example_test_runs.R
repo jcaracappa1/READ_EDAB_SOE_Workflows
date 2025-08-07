@@ -29,6 +29,14 @@ source(here::here('data-raw/workflow_comdat.R'))
 #                                    inputPathSpecies = inputPathSpecies)
 
 
+
+# calculate the comdat index
+indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
+                                    input_path_species = input_path_species,
+                                    menhaden_path = menhaden_path,
+                                    outputPathDataSets = outputPathDataSets)
+
+
 # testing comdat ---------------------
 
 commercial_summary <- create_comdat(
