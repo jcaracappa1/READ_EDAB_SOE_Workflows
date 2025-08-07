@@ -94,13 +94,11 @@ To run the "workflow" below, it is assumed that the necessary raw data files
 The workflow is typically run by piping the output of `create_comdat` directly into `get_comdat`:
 
 ```R
-create_comdat(comdat_path, report_year, end_year, input_path_species, menhaden_path) |>
-  get_comdat(save_for_package = TRUE)
+  get_comdat(comdat_path, input_path_species, menhaden_path, outputPathDataSets)
 ```
 
 * `comdat_path` is the path to the raw, comprehensive commercial landings data file, e.g., `EDAB_Datasets/commercial_comdat.rds`.
-* `report_year` is the year of the State of the Ecosystem report (e.g., 2025).
-* `end_year` is the final year of data to be included in the analysis.
 * `input_path_species` is the path to the species list used for grouping, e.g., `EDAB_Datasets/SOE_species_list_24.rds`.
-* `menhaden_path` is the path to the Menhaden landings data Excel file provided by SEFSC.
-* The final output is saved by `get_comdat` to the `data/` folder. The file name is hardcoded as `comdat.rda` to match the `ecodata` package dataset.
+* `menhaden_path` is the path to the Menhaden landings data output by create_`create_menhaden_input.R`.
+* `outputPathDataSets` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
+The rds file name is hardcoded as `comdat.rds` to match the `ecodata` package dataset
