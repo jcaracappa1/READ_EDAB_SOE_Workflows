@@ -91,8 +91,6 @@ To run the "workflow" below, it is assumed that the necessary raw data files
 
 *Note: the following function resides in the folder `data-raw` and is NOT part of the package*
 
-The workflow is typically run by piping the output of `create_comdat` directly into `get_comdat`:
-
 ```R
   get_comdat(comdat_path, input_path_species, menhaden_path, outputPathDataSets)
 ```

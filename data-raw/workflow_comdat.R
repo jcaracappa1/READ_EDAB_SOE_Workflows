@@ -38,7 +38,7 @@ workflow_comdat <- function(comdat_path,
   # Add check to skip running workflow if data not present
   if(file.exists(comdat_path) && file.exists(input_path_species) && (!is.null(outputPathDataSets))) {
     
-    indicatorData <- SOEworkflows::create_comdat(comdat_path = comdat_path,
+    indicatorData <- SOEworkflows::get_comdat(comdat_path = comdat_path,
                                                  input_path_species =  input_path_species,
                                                  menhaden_path = menhaden_path)
     # write data to file
