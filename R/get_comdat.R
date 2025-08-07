@@ -49,14 +49,11 @@ summarize_metrics <- function(data, value_col, metric_name, unit_name) {
 #' @return A single tibble containing all summarized commercial data.
 #' 
 #'
-#' @importFrom readxl read_excel
-#' @importFrom dplyr bind_rows bind_cols case_when distinct filter group_by left_join mutate rename select summarise tribble
+#' @importFrom dplyr bind_rows case_when distinct filter group_by left_join mutate rename select summarise tribble
 #' @importFrom tidyr pivot_longer
 #' @importFrom tibble as_tibble
 #' @importFrom here here
 #' @importFrom data.table as.data.table
-#' @importFrom comlandr get_comland_data
-#' @importFrom usethis use_data
 #'
 #' @export
 
