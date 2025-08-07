@@ -86,13 +86,14 @@ The rds file name is hardcoded as `species_dist.rds` to match the `ecodata` pack
 
 ### comdat
 
-To run the "workflow" below, it is assumed that the necessary raw data files 
-(commercial landings, species lists, and Menhaden data) are available.
+To run the "workflow" below, it is assumed that the commercial data has been pulled using the 
+`get_commercial_data` function above and that menhaden data have been pulled using the 
+`create_menhaden_input.R` script in the folder `data-raw`.
 
 *Note: the following function resides in the folder `data-raw` and is NOT part of the package*
 
 ```R
-  get_comdat(comdat_path, input_path_species, menhaden_path, outputPathDataSets)
+workflow_comdat(comdat_path, input_path_species, menhaden_path, outputPathDataSets)
 ```
 
 * `comdat_path` is the path to the raw, comprehensive commercial landings data file, e.g., `EDAB_Datasets/commercial_comdat.rds`.
