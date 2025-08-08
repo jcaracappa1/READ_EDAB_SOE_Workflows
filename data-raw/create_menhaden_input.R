@@ -156,8 +156,11 @@ MAbait$MAtons = MAbait$lbs * lbstotons
 # ME menhaden ----------------
 
 library(pdftools)
-download.file("https://www.maine.gov/dmr/sites/maine.gov.dmr/files/inline-files/menhaden.table__0.pdf", "menhaden.table.pdf", mode = "wb")
-txt <- pdf_text("menhaden.table.pdf")
+# download.file("https://www.maine.gov/dmr/sites/maine.gov.dmr/files/inline-files/menhaden.table__0.pdf", "menhaden.table.pdf", mode = "wb")
+temp_pdf <- tempfile(fileext = ".pdf")
+download.file("https://www.maine.gov/dmr/sites/maine.gov.dmr/files/inline-files/menhaden.table__0.pdf", 
+              destfile = temp_pdf, mode = "wb")
+txt <- pdf_text(temp_pdf)
 
 rows<-scan(textConnection(txt), what="character",
            sep = "\n")  
