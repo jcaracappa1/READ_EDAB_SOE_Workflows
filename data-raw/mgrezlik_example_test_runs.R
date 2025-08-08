@@ -48,17 +48,17 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 # )
 # 
 # comdat <- get_comdat(
-#   processed_comdat = commercial_summary, 
+#   processed_comdat = commercial_summary,
 #   save_for_package = FALSE # Set to FALSE to see the result directly
 # )
 # 
 # ## comparing my comdat outputs to old comdat ---------------
 # max_comdat_path <-  '/home/mgrezlik/EDAB_Dev/grezlik/comdat.rds'
 # 
-# comdat_max <- readRDS(max_comdat_path) |> 
+# comdat_max <- readRDS(max_comdat_path) |>
 #                 dplyr::mutate(source = 'max')
 # 
-# comdat_ecodata <- ecodata::comdat |> 
+# comdat_ecodata <- ecodata::comdat |>
 #                     dplyr::mutate(source = 'ecodata')
 # 
 # comdat_compare <- dplyr::bind_rows(comdat_max, comdat_ecodata)
@@ -90,7 +90,7 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 # library(ggplot2)
 # library(ecodata)
 # 
-#     
+# 
 #     # Filter for relevant variables, keeping the source distinct
 #     total_landings <- comdat_compare |>
 #       dplyr::filter(
@@ -102,9 +102,9 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #         feeding.guild = str_extract(Var, "^\\w+"),
 #         grouping = "Total"
 #       )
-#     
-# setup <- ecodata::plot_setup(shadedRegion = NULL, report = 'MidAtlantic')    
-#     
+# 
+# setup <- ecodata::plot_setup(shadedRegion = NULL, report = 'MidAtlantic')
+# 
 #     managed_landings <- comdat_compare |>
 #       dplyr::filter(
 #         str_detect(Var, "managed species - Landings"),
@@ -116,28 +116,28 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #         feeding.guild = str_extract(Var, "^\\w+"),
 #         grouping = "Council Managed"
 #       )
-#     
+# 
 #     # Prepare data for the "guild" plot
 #     guilddat <- dplyr::bind_rows(total_landings, managed_landings) |>
 #       dplyr::filter(!feeding.guild %in% c("Apex", "Other", "Landings")) |>
 #       dplyr::group_by(Time, EPU, source, feeding.guild, grouping) |>
 #       dplyr::summarise(Value = sum(Value, na.rm = TRUE), .groups = "drop") |>
 #       dplyr::mutate(feeding.guild = factor(feeding.guild, levels = setup$feeding.guilds))
-#     
-#     
+# 
+# 
 #     plot_guild_landings <- guilddat |>
 #       ggplot(aes(x = Time, y = Value, color = source, linetype = grouping)) +
 #       geom_line(linewidth = setup$lwd) +
 #       facet_grid(feeding.guild ~ EPU, scales = "free_y")
-#     
-#     
-#     
+# 
+# 
+# 
 #     # Prepare data for the "total" plot
 #     totdat <- guilddat |>
 #       dplyr::group_by(Time, EPU, source, grouping) |>
 #       dplyr::summarise(Value = sum(Value, na.rm = TRUE) / 1000, .groups = "drop") |>
 #       dplyr::rename(Var = grouping)
-#     
+# 
 #     plot_total_landings <- totdat |>
 #       ggplot(aes(x = Time, y = Value, color = source, linetype = Var)) +
 #       geom_line(linewidth = setup$lwd) +
@@ -145,9 +145,9 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #       facet_wrap(~EPU, scales = "free_y")
 # 
 #     land_ylabdat <- expression("Landings (10"^3 * " metric tons)")
-#     
+# 
 #   ## DATA WRANGLING FOR REVENUE ----
-#     
+# 
 #     # Filter for relevant variables, keeping the source distinct
 #     total_revenue <- comdat_compare |>
 #       dplyr::filter(
@@ -159,7 +159,7 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #         feeding.guild = str_extract(Var, "^\\w+"),
 #         grouping = "Total"
 #       )
-#     
+# 
 #     managed_revenue <- comdat_compare |>
 #       dplyr::filter(
 #         str_detect(Var, "managed species - Revenue"),
@@ -171,35 +171,35 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #         feeding.guild = str_extract(Var, "^\\w+"),
 #         grouping = "Council Managed"
 #       )
-#     
+# 
 #     # Prepare data for the "guild" plot
 #     guilddat <- bind_rows(total_revenue, managed_revenue) |>
 #       dplyr::filter(!feeding.guild %in% c("Apex", "Other", "Revenue")) |>
 #       dplyr::group_by(Time, EPU, source, feeding.guild, grouping) |>
 #       dplyr::summarise(Value = sum(Value, na.rm = TRUE) / 1000, .groups = "drop") |>
 #       dplyr::mutate(feeding.guild = factor(feeding.guild, levels = setup$feeding.guilds))
-#     
+# 
 #     plot_guild_revenue <- guilddat |>
 #       ggplot(aes(x = Time, y = Value, color = source, linetype = grouping)) +
 #       geom_line(linewidth = setup$lwd) +
 #       facet_grid(feeding.guild ~ EPU, scales = "free_y")
-#     
+# 
 #     # Prepare data for the "total" plot
 #     totdat <- guilddat |>
 #       dplyr::group_by(Time, EPU, source, grouping) |>
 #       dplyr::summarise(Value = sum(Value, na.rm = TRUE) / 1000, .groups = "drop") |>
 #       dplyr::rename(Var = grouping)
-#     
+# 
 #     rev_ylabdat <- expression("Revenue (10"^6 * " USD)")
-#   
+# 
 #     plot_total_revenue <- totdat |>
 #       ggplot(aes(x = Time, y = Value, color = source, linetype = Var)) +
 #       geom_line(linewidth = setup$lwd) +
 #       geom_point(aes(shape = Var), size = setup$pcex) +
 #       facet_wrap(~EPU, scales = "free_y")
-#   
+# 
 #   ## PLOTTING ----
-#  
+# 
 #     # Apply common aesthetics
 #     p_tot_rev <- plot_total_revenue +
 #       scale_x_continuous(breaks = seq(1980, 2020, by = 10), expand = c(0.01, 0.01)) +
@@ -208,7 +208,7 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #       ecodata::theme_title() +
 #       ecodata::theme_facet() +
 #       theme(legend.position = "bottom", legend.title = element_blank())
-#     
+# 
 #     p_guild_rev <- plot_guild_revenue +
 #       scale_x_continuous(breaks = seq(1980, 2020, by = 10), expand = c(0.01, 0.01)) +
 #       labs(y = rev_ylabdat, x = NULL) +
@@ -216,7 +216,7 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #       ecodata::theme_title() +
 #       ecodata::theme_facet() +
 #       theme(legend.position = "bottom", legend.title = element_blank())
-#     
+# 
 #     p_tot_land <- plot_total_landings +
 #       scale_x_continuous(breaks = seq(1980, 2020, by = 10), expand = c(0.01, 0.01)) +
 #       labs(y = land_ylabdat, x = NULL) +
@@ -224,7 +224,7 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #       ecodata::theme_title() +
 #       ecodata::theme_facet() +
 #       theme(legend.position = "bottom", legend.title = element_blank())
-#   
+# 
 #     p_guild_land <- plot_guild_landings +
 #       scale_x_continuous(breaks = seq(1980, 2020, by = 10), expand = c(0.01, 0.01)) +
 #       labs(y = land_ylabdat, x = NULL) +
@@ -232,8 +232,8 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #       ecodata::theme_title() +
 #       ecodata::theme_facet() +
 #       theme(legend.position = "bottom", legend.title = element_blank())
-# 
-#     
+
+
 # ## saving plots -----------
 # # ggsave(
 # #   filename = here::here('data-raw','total_revenue.pdf'),
