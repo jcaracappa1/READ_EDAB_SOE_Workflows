@@ -19,6 +19,7 @@
 #'
 #' @export
 #' 
+
 get_comdat <- function(comdat_path,
                        input_path_species,
                        menhaden_path,
@@ -90,7 +91,7 @@ get_comdat <- function(comdat_path,
   us_data <- dplyr::filter(base_data, US)
   seafood_data <- dplyr::filter(us_data, UTILCD %in% c(0, NA))
   
-  # 4. Summarize Inline (formerly summarize_metrics) ----
+  # 4. Summarize ----
   summarize_inline <- function(data, value_col, metric_name, unit_name) {
     total_summary <- data |>
       dplyr::group_by(YEAR, EPU) |>
