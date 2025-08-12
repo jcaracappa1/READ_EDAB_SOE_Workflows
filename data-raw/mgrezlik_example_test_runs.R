@@ -52,37 +52,55 @@ indicator_comdat <- workflow_comdat(comdat_path = comdat_path,
 #   save_for_package = FALSE # Set to FALSE to see the result directly
 # )
 # 
-# ## comparing my comdat outputs to old comdat ---------------
+## comparing my comdat outputs to old comdat ---------------
 # max_comdat_path <-  '/home/mgrezlik/EDAB_Dev/grezlik/comdat.rds'
 # 
 # comdat_max <- readRDS(max_comdat_path) |>
 #                 dplyr::mutate(source = 'max')
-# 
-# comdat_ecodata <- ecodata::comdat |>
-#                     dplyr::mutate(source = 'ecodata')
-# 
-# comdat_compare <- dplyr::bind_rows(comdat_max, comdat_ecodata)
-# 
-# difference_summary <- comdat_compare |>
-#   tidyr::pivot_wider(
-#     names_from = source,
-#     values_from = Value
-#   ) |>
-#   # Calculate both absolute and percentage difference
-#   dplyr::mutate(
-#     absolute_diff = max - ecodata,
-#     percent_diff = (max - ecodata) / ecodata * 100
-#   )
-# 
-# 
-# # Pipeline method has more observations than are found in ecodata (34037 compared to 26141)
-# # anti join to find observations in comdat_max that are not in comdat_ecodata
-# 
-# missing_from_ecodata <- dplyr::anti_join(
-#   comdat_max,
-#   comdat_ecodata,
-#   by = c("Time", "Var", "EPU")
-# )
+comdat_max <- indicator_comdat |> 
+                dplyr::mutate(source = 'max')
+
+comdat_ecodata <- ecodata::comdat |>
+                    dplyr::mutate(source = 'ecodata')
+
+comdat_compare <- dplyr::bind_rows(comdat_max, comdat_ecodata)
+
+difference_summary <- comdat_compare |>
+  tidyr::pivot_wider(
+    names_from = source,
+    values_from = Value
+  ) |>
+  # Calculate both absolute and percentage difference
+  dplyr::mutate(
+    absolute_diff = max - ecodata,
+    percent_diff = (max - ecodata) / ecodata * 100
+  )
+
+
+# Pipeline method has more observations than are found in ecodata (34037 compared to 26141)
+# anti join to find observations in comdat_max that are not in comdat_ecodata
+
+missing_from_ecodata <- dplyr::anti_join(
+  comdat_max,
+  comdat_ecodata,
+  by = c("Time", "Var", "EPU")
+)
+
+# Andy noticed that my comdat object had 25 more 'var'
+# looking into this now
+
+unique_vars_max <- unique(comdat_max$Var)
+unique_vars_ecodata <- unique(comdat_ecodata$Var)
+
+vars_only_in_max <- setdiff(unique_vars_max, unique_vars_ecodata)
+
+# Print the result
+print(vars_only_in_max)
+
+saveRDS(unique_vars_max, file = file.path(outputPath, "unique_vars_max.rds"))
+saveRDS(unique_vars_ecodata, file = file.path(outputPath, "unique_vars_ecodata.rds"))
+saveRDS(vars_only_in_max, file = file.path(outputPath, "vars_only_in_max.rds"))
+
 # 
 # # comparison plots using ecodata::plot_comdat() as a template ---------------
 # library(stringr)
