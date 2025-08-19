@@ -30,19 +30,20 @@ get_comdat <- function(comdat_path,
     stop("One or more of the input files are not present in the location specified")
   }
   
-  # 1. Define EPU Areas for comlandr ----
-  epu_areas <- dplyr::tribble(
-    ~AREA, ~EPU,
-    500, "GOM", 510, "GOM", 512, "GOM", 513, "GOM", 514, "GOM", 515, "GOM",
-    521, "GB",  522, "GB",  523, "GB",  524, "GB",  525, "GB",  526, "GB",
-    551, "GB",  552, "GB",  561, "GB",  562, "GB",
-    537, "MAB", 539, "MAB", 600, "MAB", 612, "MAB", 613, "MAB", 614, "MAB",
-    615, "MAB", 616, "MAB", 621, "MAB", 622, "MAB", 625, "MAB", 626, "MAB",
-    631, "MAB", 632, "MAB",
-    463, "SS",  464, "SS",  465, "SS",  466, "SS",  467, "SS",  511, "SS"
-  ) |>
-    dplyr::mutate(NESPP3 = 1, MeanProp = 1) |>
-    data.table::as.data.table()
+  # 1. Define EPU Areas ----
+  # Define each EPU area as a tibble
+  gom <- tibble::tibble(AREA = c(500, 510, 512:515), EPU = "GOM")
+  gb  <- tibble::tibble(AREA = c(521:526, 551, 552, 561, 562), EPU = "GB")
+  mab <- tibble::tibble(AREA = c(537, 539, 600, 612:616, 621, 622, 625, 626, 631, 632), EPU = "MAB")
+  ss  <- tibble::tibble(AREA = c(463:467, 511), EPU = "SS")
+  
+  # Combine all into one tibble
+  epuAreas <- dplyr::bind_rows(gom, gb, mab, ss) |> 
+    dplyr::mutate(
+      NESPP3 = 1,
+      MeanProp = 1
+    )
+  
   
   # 2. Load and Process All Data Sources ----
   comland_list <- readRDS(comdat_path)
@@ -77,57 +78,317 @@ get_comdat <- function(comdat_path,
     dplyr::distinct()
   
   # 3. Combine and Clean Base Data ----
-  base_data <- dplyr::bind_rows(comland_raw, menhaden_data) |>
+ comland.agg <- dplyr::bind_rows(comland_raw, menhaden_data) |>
     dplyr::mutate(NESPP3 = as.numeric(NESPP3)) |>
     dplyr::left_join(species_codes, by = "NESPP3") |>
     dplyr::mutate(
       EPU = ifelse(is.na(EPU), "OTHER", EPU),
       SOE.24 = ifelse(is.na(SOE.24), "Other", SOE.24),
-      Fed.Managed = ifelse(is.na(Fed.Managed), "Other", Fed.Managed),
       SPPLIVMT = ifelse(NESPP3 == 800 & !US, SPPLIVMT / 8.33, SPPLIVMT)
     )
   
-  # Subsets
-  us_data <- dplyr::filter(base_data, US)
-  seafood_data <- dplyr::filter(us_data, UTILCD %in% c(0, NA))
+  # 4. Landings section from create_comdat ----------
+  # Not adding NAFO landings like was done previously
   
-  # 4. Summarize ----
-  summarize_inline <- function(data, value_col, metric_name, unit_name) {
-    total_summary <- data |>
-      dplyr::group_by(YEAR, EPU) |>
-      dplyr::summarise(Value = sum({{ value_col }}, na.rm = TRUE), .groups = "drop") |>
-      dplyr::mutate(Var = metric_name)
-    
-    group_summary <- data |>
-      dplyr::group_by(YEAR, EPU, SOE.24) |>
-      dplyr::summarise(Value = sum({{ value_col }}, na.rm = TRUE), .groups = "drop") |>
-      dplyr::mutate(Var = paste(SOE.24, metric_name))
-    
-    managed_summary <- data |>
-      dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
-      dplyr::summarise(Value = sum({{ value_col }}, na.rm = TRUE), .groups = "drop") |>
-      dplyr::mutate(Var = paste(SOE.24, Fed.Managed, "managed species -", metric_name))
-    
-    dplyr::bind_rows(total_summary, group_summary, managed_summary) |>
-      dplyr::rename(Time = YEAR, Region = EPU) |>
-      dplyr::mutate(Units = unit_name, Source = "Commercial Fisheries Database (comland)") |>
-      dplyr::select(Time, Region, Var, Value, Units, Source) |>
-      dplyr::distinct()
-  }
+  landings <- comland.agg |> 
+    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |> 
+    dplyr::summarise(
+      SPPLIVMT = sum(SPPLIVMT, na.rm = TRUE),
+      .groups = "drop"
+    ) |> 
+    dplyr::group_by(YEAR, EPU) |> 
+    dplyr::mutate(
+      Total.all = sum(SPPLIVMT, na.rm = TRUE),
+      Prop.managed = SPPLIVMT / Total.all
+    ) |> 
+    dplyr::ungroup()
   
-  landings <- summarize_inline(base_data, SPPLIVMT, "Landings", "metric tons")
-  landings_us <- summarize_inline(us_data, SPPLIVMT, "Landings - US only", "metric tons")
-  revenue <- summarize_inline(base_data, SPPVALUE, "Revenue", "US dollars")
-  revenue_us <- summarize_inline(us_data, SPPVALUE, "Revenue - US only", "US dollars")
-  seafood <- summarize_inline(seafood_data, SPPLIVMT, "Seafood Landings", "metric tons")
   
-  # 5. Combine and Save ----
-  commercial_summary <- dplyr::bind_rows(
-    landings, landings_us,
-    revenue, revenue_us,
-    seafood
+  # US Landings only - affects Georges Bank
+  land.us <- comland.agg |> 
+    dplyr::filter(US == TRUE) |> 
+    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |> 
+    dplyr::summarise(SPPLIVMT = sum(SPPLIVMT, na.rm = TRUE), .groups = "drop") |> 
+    # Add group totals and proportions
+    dplyr::group_by(YEAR, EPU, SOE.24) |> 
+    dplyr::mutate(Total = sum(SPPLIVMT, na.rm = TRUE)) |> 
+    dplyr::ungroup() |> 
+    dplyr::mutate(Prop.managed = SPPLIVMT / Total) |> 
+    dplyr::group_by(YEAR, EPU) |> 
+    dplyr::mutate(Total.all = sum(SPPLIVMT, na.rm = TRUE)) |> 
+    dplyr::ungroup()
+  
+  
+  # Total
+  land.tot <- landings |> 
+    dplyr::mutate(
+      Var = "Landings",
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    )  |> 
+    # Rename columns
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = Total.all
+    ) |> 
+    # Remove unwanted columns
+    dplyr::select(Time, Value, Var, Units, Region, Source)  |> 
+    # Remove duplicate rows
+    dplyr::distinct()
+  
+  # Total - US only
+  land.tot.us <- land.us  |> 
+    dplyr::mutate(
+      Var = "Landings - US only",
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    ) |> 
+    # Rename columns
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = Total.all
+    ) |> 
+    # Remove unnecessary columns
+    dplyr::select(Time, Value, Var, Units, Region, Source) |> 
+    # Drop duplicates
+    dplyr::distinct()
+  
+  # Total agg
+  land.agg <- landings |> 
+    dplyr::mutate(
+      Var = paste(SOE.24, "Landings"),
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    ) |> 
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = Total.all
+    ) |> 
+    # Drop unnecessary columns
+    dplyr::select(Time, Value, Var, Units, Region, Source) |> 
+    # Remove duplicate rows
+    dplyr::distinct()
+  
+  # Total - US only
+  land.agg.us <- land.us |> 
+    dplyr::mutate(
+      Var = paste(SOE.24, "Landings - US only"),
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    ) |> 
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = Total.all
+    ) |> 
+    # Keep only the desired columns in the correct order
+    dplyr::select(Time, Value, Var, Units, Region, Source) |> 
+    # Remove duplicates
+    dplyr::distinct()
+  
+  # Landings managed
+  land.man <- landings  |> 
+    dplyr::mutate(
+      Fed.Managed = dplyr::if_else(is.na(Fed.Managed), "Other", Fed.Managed),
+      Var = paste(SOE.24, Fed.Managed, "managed species - Landings weight"),
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    )  |> 
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = SPPLIVMT  # 'V1' in data.table is the result of summing SPPLIVMT
+    ) |> 
+    dplyr::select(Time, Value, Var, Units, Region, Source)
+  
+  # Landings managed
+  land.man.us <- land.us  |> 
+    dplyr::mutate(
+      Fed.Managed = dplyr::if_else(is.na(Fed.Managed), "Other", Fed.Managed),
+      Var = paste(SOE.24, Fed.Managed, "managed species - Landings weight - US only"),
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    ) |> 
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = SPPLIVMT  # Assuming V1 corresponds to summed SPPLIVMT
+    )  |> 
+    dplyr::select(Time, Value, Var, Units, Region, Source)
+  
+  
+  # 5. Revenue section from create_comdat
+  # Revenue (all)
+  revenue <- comland.agg  |> 
+    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
+    dplyr::summarise(SPPVALUE_sum = sum(SPPVALUE, na.rm = TRUE), .groups = "drop") |>
+    dplyr::group_by(YEAR, EPU, SOE.24) |>
+    dplyr::mutate(Total = sum(SPPVALUE_sum, na.rm = TRUE)) |>
+    dplyr::ungroup() |>
+    dplyr::mutate(Prop.managed = SPPVALUE_sum / Total) |>
+    dplyr::group_by(YEAR, EPU) |>
+    dplyr::mutate(Total.all = sum(SPPVALUE_sum, na.rm = TRUE)) |>
+    dplyr::ungroup()
+  
+  # Revenue - US only
+  revenue.us <- comland.agg |>
+    dplyr::filter(US == TRUE) |>
+    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed) |>
+    dplyr::summarise(SPPVALUE_sum = sum(SPPVALUE, na.rm = TRUE), .groups = "drop") |>
+    dplyr::group_by(YEAR, EPU, SOE.24) |>
+    dplyr::mutate(Total = sum(SPPVALUE_sum, na.rm = TRUE)) |>
+    dplyr::ungroup() |>
+    dplyr::mutate(Prop.managed = SPPVALUE_sum / Total) |>
+    dplyr::group_by(YEAR, EPU) |>
+    dplyr::mutate(Total.all = sum(SPPVALUE_sum, na.rm = TRUE)) |>
+    dplyr::ungroup()
+  
+  # Total revenue (all)
+  rev.tot <- revenue |>
+    dplyr::mutate(Var = "Revenue",
+           Units = "US dollars",
+           Source = "Commercial Fisheries Database (comland)") |>
+    dplyr::rename(Time = YEAR, Region = EPU, Value = Total.all) |>
+    dplyr::select(Time, Value, Var, Units, Region, Source) |>
+    dplyr::distinct()
+  
+  # Total revenue US only
+  rev.tot.us <- revenue.us |>
+    dplyr::mutate(Var = "Revenue - US only",
+           Units = "US dollars",
+           Source = "Commercial Fisheries Database (comland)") |>
+    dplyr::rename(Time = YEAR, Region = EPU, Value = Total.all) |>
+    dplyr::select(Time, Value, Var, Units, Region, Source) |>
+    dplyr::distinct()
+  
+  # Total aggregated revenue (all)
+  rev.agg <- revenue |>
+    dplyr::mutate(Var = paste(SOE.24, "Revenue"),
+           Units = "US dollars",
+           Source = "Commercial Fisheries Database (comland)") |>
+    dplyr::rename(Time = YEAR, Region = EPU, Value = Total) |>
+    dplyr::select(Time, Value, Var, Units, Region, Source) |>
+    dplyr::distinct()
+  
+  # Total aggregated revenue US only
+  rev.agg.us <- revenue.us |>
+    dplyr::mutate(Var = paste(SOE.24, "Revenue - US only"),
+           Units = "US dollars",
+           Source = "Commercial Fisheries Database (comland)") |>
+    dplyr::rename(Time = YEAR, Region = EPU, Value = Total) |>
+    dplyr::select(Time, Value, Var, Units, Region, Source) |>
+    dplyr::distinct()
+  
+  # Managed revenue (all)
+  rev.man <- revenue |>
+    dplyr::mutate(Fed.Managed = dplyr::if_else(is.na(Fed.Managed), "Other", Fed.Managed),
+           Var = paste(SOE.24, Fed.Managed, "managed species - Revenue"),
+           Units = "US dollars",
+           Source = "Commercial Fisheries Database (comland)") |>
+    dplyr::rename(Time = YEAR, Region = EPU, Value = SPPVALUE_sum) |>  # assuming V1 corresponds to SPPVALUE_sum
+    dplyr::select(Time, Value, Var, Units, Region, Source) |>
+    dplyr::distinct()
+  
+  # Managed revenue US only
+  rev.man.us <- revenue.us |>
+    dplyr::mutate(Fed.Managed = dplyr::if_else(is.na(Fed.Managed), "Other", Fed.Managed),
+           Var = paste(SOE.24, Fed.Managed, "managed species - Revenue - US only"),
+           Units = "US dollars",
+           Source = "Commercial Fisheries Database (comland)") |>
+    dplyr::rename(Time = YEAR, Region = EPU, Value = SPPVALUE_sum) |>  # assuming V1 corresponds to SPPVALUE_sum
+    dplyr::select(Time, Value, Var, Units, Region, Source) |>
+    dplyr::distinct()
+  
+  
+  # Proportion of seafood
+  # util.code as a tibble
+  util.code <- tibble::tibble(
+    UTILCD = c(0, 2, 3, 4, 5, 7, 8, 9),
+    DESC = c('food fish or unknown',
+             'aquaculture',
+             'canned pet food',
+             'Biomedical',
+             'animal food',
+             'bait',
+             'industrial - other',
+             'industrial - reduction')
   )
   
+  # seafood aggregation
+  seafood <- comland.agg |>
+    dplyr::filter(US == TRUE, UTILCD == 0) |>
+    dplyr::group_by(YEAR, EPU, SOE.24, Fed.Managed, UTILCD) |>
+    dplyr::summarise(SPPLIVMT_sum = sum(SPPLIVMT, na.rm = TRUE), .groups = "drop") |>
+    dplyr::mutate(
+      Fed.Managed = dplyr::if_else(is.na(Fed.Managed), "Other", Fed.Managed)
+    ) |>
+    dplyr::group_by(YEAR, EPU, SOE.24) |>
+    dplyr::mutate(Total = sum(SPPLIVMT_sum, na.rm = TRUE)) |>
+    dplyr::ungroup() |>
+    dplyr::group_by(YEAR, EPU) |>
+    dplyr::mutate(Total.all = sum(SPPLIVMT_sum, na.rm = TRUE)) |>
+    dplyr::ungroup()
+  
+  # sea.tot
+  sea.tot <- seafood  |> 
+    dplyr::mutate(
+      Var = "Seafood Landings",
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    ) |> 
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = Total.all
+    ) |> 
+    dplyr::select(Time, Value, Var, Units, Region, Source)  |> 
+    dplyr::distinct()
+  
+  # sea.agg
+  sea.agg <- seafood  |> 
+    dplyr::mutate(
+      Var = paste(SOE.24, "Seafood Landings"),
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    )  |> 
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = Total
+    )  |> 
+    dplyr::select(Time, Value, Var, Units, Region, Source) |> 
+    dplyr::distinct()
+  
+  # sea.man
+  sea.man <- seafood  |> 
+    dplyr::mutate(
+      Var = paste(SOE.24, Fed.Managed, "managed species - Seafood Landings"),
+      Units = "metric tons",
+      Source = "Commercial Fisheries Database (comland)"
+    ) |> 
+    dplyr::rename(
+      Time = YEAR,
+      Region = EPU,
+      Value = SPPLIVMT_sum  
+    )  |> 
+    dplyr::select(Time, Value, Var, Units, Region, Source)  |> 
+    dplyr::distinct()
+  
+  
+  # 5. Summarize to pass to get_comdat ------------
+  commercial_summary  <- dplyr::bind_rows(
+    land.tot, rev.tot, sea.tot,
+    land.agg.us, land.agg, rev.agg, sea.agg,
+    land.man.us, land.man, rev.man, sea.man
+  )
+  
+  
+
+  # 6. old get_comdat function -------------
+  # just tidying
   comdat <- commercial_summary |>
     dplyr::rename(EPU = Region) |>
     dplyr::select(Time, Var, Value, EPU, Units) |>
