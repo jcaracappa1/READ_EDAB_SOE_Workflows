@@ -7,6 +7,6 @@ inputPath <- "/home/bbeltz/EDAB_Dev/beltz/TS_SHP_adv rep MAB GOM GBK NES SCSPoly
 # source workflow functions from data-raw since they are not accessible from the package installation
 source(here::here("data-raw/workflow_trans_dates.R"))
 
-# calculate the bennet index
+# calculate the transition dates indicator
 indicator_trans_dates <- workflow_trans_dates(inputPath = inputPath,
                                               outputPath = outputPath)
