@@ -93,13 +93,16 @@ unique_vars_max <- unique(comdat_max$Var)
 unique_vars_ecodata <- unique(comdat_ecodata$Var)
 
 vars_only_in_max <- setdiff(unique_vars_max, unique_vars_ecodata)
+vars_only_in_ecodata <- setdiff(unique_vars_ecodata,unique_vars_max)
+
+vars_in_both <- intersect(unique_vars_ecodata, unique_vars_max)
 
 # Print the result
 print(vars_only_in_max)
 
-saveRDS(unique_vars_max, file = file.path(outputPath, "unique_vars_max.rds"))
-saveRDS(unique_vars_ecodata, file = file.path(outputPath, "unique_vars_ecodata.rds"))
-saveRDS(vars_only_in_max, file = file.path(outputPath, "vars_only_in_max.rds"))
+# saveRDS(unique_vars_max, file = file.path(outputPath, "unique_vars_max.rds"))
+# saveRDS(unique_vars_ecodata, file = file.path(outputPath, "unique_vars_ecodata.rds"))
+# saveRDS(vars_only_in_max, file = file.path(outputPath, "vars_only_in_max.rds"))
 
 # 
 # # comparison plots using ecodata::plot_comdat() as a template ---------------
