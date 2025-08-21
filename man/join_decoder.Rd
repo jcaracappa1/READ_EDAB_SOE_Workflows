@@ -4,10 +4,7 @@
 \alias{join_decoder}
 \title{Joins the stock status stock abbreviation lookup table}
 \usage{
-join_decoder(
-  data,
-  decoder = utils::read.csv(here::here("data-raw/2024decoder.csv"))
-)
+join_decoder(data, decoder)
 }
 \arguments{
 \item{data}{the stock status data frame, typically from \code{stocksmart::stockAssessmentSummary}. Must have columns named \code{Entity.Name}, \code{Assessment.Year}, \code{F.Fmsy}, and \code{B.Bmsy}.}
