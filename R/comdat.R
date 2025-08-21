@@ -20,7 +20,7 @@
 #' @export
 #' 
 
-get_comdat <- function(comdat_path,
+create_comdat <- function(comdat_path,
                        input_path_species,
                        menhaden_path,
                        outputPathDataSets) {

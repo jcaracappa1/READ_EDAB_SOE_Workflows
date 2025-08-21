@@ -40,7 +40,7 @@ workflow_comdat <- function(comdat_path,
      file.exists(menhaden_path) &&
      !is.null(outputPathDataSets)) {
     
-    indicatorData <- SOEworkflows::get_comdat(
+    indicatorData <- SOEworkflows::create_comdat(
       comdat_path = comdat_path,
       input_path_species =  input_path_species,
       menhaden_path = menhaden_path,
