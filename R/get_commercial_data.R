@@ -36,6 +36,7 @@ get_commercial_data <- function(channel, outputPathDatasets = NULL) {
   epuAreas[, NESPP3 := 1]
   epuAreas[, MeanProp := 1]
 
+  message("Pulling Commercial data by EPU ...")
   # Get the commercial data for comdat and bennet
   comland1 <- comlandr::get_comland_data(
     channel,

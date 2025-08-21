@@ -19,10 +19,12 @@
 get_survey_data <- function(channel) {
   end.year <- format(Sys.Date(), "%Y")
   # Get the survey data for aggregate biomass
+  message("Getting base survey data without Lengths ")
   survey1 <- survdat::get_survdat_data(channel, getLengths = F)
 
   # Get the survey data for exp_n, survey_shannon
   # Grab Albatross time series (< 2009)
+  message("Getting albatross survey data (<= 2008) without Lengths ")
   al.data <- survdat::get_survdat_data(
     channel,
     filterByYear = 1963:2008,
@@ -30,6 +32,7 @@ get_survey_data <- function(channel) {
   )
 
   #Grab data without Bigelow conversions (>= 2009)
+  message("Getting bigelow survey data (> 2008) without Lengths ")
   big.data <- survdat::get_survdat_data(
     channel,
     filterByYear = 2009:end.year,
@@ -39,6 +42,7 @@ get_survey_data <- function(channel) {
 
   # Get the survey data for condition indicator.
   # Individual lengths and weights are required
+  message("Getting condition survey data with biological data ")
   condition <- survdat::get_survdat_data(
     channel,
     all.season = TRUE,
@@ -52,6 +56,8 @@ get_survey_data <- function(channel) {
     big.data = big.data,
     condition = condition
   )
+  
+  message("Done pulling Survey data")
 
   return(survey_data)
 }
