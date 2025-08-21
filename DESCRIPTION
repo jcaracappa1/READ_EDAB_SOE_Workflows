@@ -28,6 +28,7 @@ Imports:
     tidyr,
     sf,
     vegan,
+    tibble,
     stocksmart,
     rlang,
     utils,
