@@ -11,11 +11,14 @@ inputPathSpecies <- "/home/abeet/EDAB_Datasets/SOE_species_list_24.rds"
 inputPathAlbatross <- "/home/abeet/EDAB_Dev/beet/albatrossData.rds"
 inputPathBigelow <- "/home/abeet/EDAB_Dev/beet/bigelowData.rds"
 inputPathBennet <- "/home/abeet/EDAB_Dev/beet/commercial_bennet.rds"
+inputPathComdat <- "/home/abeet/EDAB_Dev/beet/commercial_comdat.rds"
+menhadenPath <- "/home/abeet/EDAB_Dev/grezlik/menhadenEOF.rds"
 
 # source workflow functions from data-raw since they are not accessible from the package installation
 source(here::here("data-raw/workflow_aggregate_biomass.R"))
 source(here::here("data-raw/workflow_survey_shannon.R"))
 source(here::here("data-raw/workflow_bennet.R"))
+source(here::here("data-raw/workflow_comdat.R"))
 
 ## Connects to the data base.
 # This is only needed to pull data from survey and commercial dbs
@@ -40,3 +43,9 @@ indicator_aggegegate_biomass <- workflow_aggregate_biomass(outputPath = outputPa
 indicator_survey_shannon <- workflow_survey_shannon(outputPath = outputPath,
                                 inputPathBigelow = inputPathBigelow,
                                 inputPathAlbatross = inputPathAlbatross)
+
+# comdat workflow
+indicator_comdat <- workflow_comdat(comdat_path = inputPathComdat,
+                input_path_species = inputPathSpecies,
+                menhaden_path = menhadenPath,
+                outputPathDataSets = outputPath)
