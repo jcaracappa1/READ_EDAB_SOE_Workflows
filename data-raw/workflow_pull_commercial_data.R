@@ -17,7 +17,7 @@
 #' }
 #'
 
-workflow_pull_data <- function(channel, outputPath = NULL) {
+workflow_pull_commercial_data <- function(channel, outputPath = NULL) {
   # pull commercial data
   commercial_data <- SOEworkflows::get_commercial_data(channel)
 
