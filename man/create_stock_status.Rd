@@ -4,15 +4,12 @@
 \alias{create_stock_status}
 \title{Creates the stock status data frame for the SOE}
 \usage{
-create_stock_status(
-  data = stocksmart::stockAssessmentSummary,
-  decode = utils::read.csv(here::here("data-raw/2024decoder.csv"))
-)
+create_stock_status(data = stocksmart::stockAssessmentSummary, decode)
 }
 \arguments{
 \item{data}{the stock status data frame, typically from \code{stocksmart::stockAssessmentSummary}}
 
-\item{decode}{a data frame that joins the stock names with a code abbreviation to use in plotting, typically read from a CSV file. If set to \code{FALSE}, the function will return a data frame in a less processed form, like Sarah used to provide in the \code{assess.csv} file.}
+\item{decode}{a data frame that matches the stock names with a code abbreviation to use in plotting, typically read from a CSV file. If set to \code{FALSE}, the function will return a data frame in a less processed form, like Sarah used to provide in the \code{assess.csv} file.}
 }
 \value{
 a tibble
