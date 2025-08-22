@@ -18,7 +18,10 @@ menhadenPath <- "/home/abeet/EDAB_Dev/grezlik/menhadenEOF.rds"
 source(here::here("data-raw/workflow_aggregate_biomass.R"))
 source(here::here("data-raw/workflow_survey_shannon.R"))
 source(here::here("data-raw/workflow_bennet.R"))
+source(here::here("data-raw/workflow_pull_survey_data.R"))
+source(here::here("data-raw/workflow_pull_commercial_data.R"))
 source(here::here("data-raw/workflow_comdat.R"))
+
 
 ## Connects to the data base.
 # This is only needed to pull data from survey and commercial dbs
@@ -28,6 +31,11 @@ channel <- dbutils::connect_to_database("server","user")
 rawData <- SOEworkflows::get_survey_data(channel,outputPathDataSets)
 # pull and write commercial data
 commercial_data <- SOEworkflows::get_commercial_data(channel,outputPathDataSets)
+
+
+# workflows for pulling data
+survey <- workflow_pull_survey_data(channel,outputPath = outputPathDataSets)
+commercial <- workflow_pull_commercial_data(channel,outputPath = outputPathDataSets)
 
 # calculate the bennet index
 indicator_bennet <- workflow_bennet(inputPathBennet = inputPathBennet,

@@ -8,10 +8,6 @@ get_commercial_data(channel, outputPathDatasets = NULL)
 }
 \arguments{
 \item{channel}{an Object inherited from DBIConnection-class.}
-
-\item{outputPathDatasets}{Character string. Path to folder where data pull
-should be saved (Default = NULL). If not NULL the pull will be saved to the
-folder \code{outputPathDatasets} with names (\code{comdat.rds},\code{bennet.rds})}
 }
 \value{
 A list of commercial data pulls
@@ -23,8 +19,7 @@ Menhaden data are removed from the commercial data pull since they are incomplet
 \examples{
 \dontrun{
 channel <- dbutils::connect_to_database("server","user")
-outputPathDataSets <- here::here()
-rawData <- get_commercial_data(channel, outputPathDataSets)
+rawData <- get_commercial_data(channel)
 }
 
 }

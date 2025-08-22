@@ -4,16 +4,11 @@
 \alias{get_survey_data}
 \title{Get survey data using survdat}
 \usage{
-get_survey_data(channel, outputPathDatasets = NULL)
+get_survey_data(channel)
 }
 \arguments{
 \item{channel}{an Object inherited from DBIConnection-class. .
 This object is used to connect to communicate with the database engine.}
-
-\item{outputPathDatasets}{Character string. Path to folder where data pull
-should be saved (Default = NULL). If not NULL the pull will be saved to the
-folder \code{outputPathDatasets} with names (\code{lbatrossData.rds},
-\code{bigelowData.rds},\code{surveyNoLengths.rds}, \code{condition.rds})}
 }
 \value{
 A list of survey data pulls
@@ -24,8 +19,7 @@ Pulls survey data in format required for indicator generation
 \examples{
 \dontrun{
 channel <- dbutils::connect_to_database("server",user)
-outputPathDataSets <- here::here()
-rawData <- get_survey_data(channel, outputPathDataSets)
+rawData <- get_survey_data(channel)
 }
 
 }
