@@ -2,20 +2,19 @@ Package: SOEworkflows
 Title: Generates Indicators for the State of the Ecosystem report
 Version: 0.0.0.9000
 Authors@R: 
-    person("Joseph", "Caracappa", , "joseph.caracappa@noaa.gov", role = c("aut", "cre"))
-Description: Generates Indicators for the State of the Ecosystem report
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    c(person(given = "Joseph", family = "Caracappa", email = "joseph.caracappa@noaa.gov", role = c("aut", "cre")),
+    person(given = "Andy", family = "Beet", email = "andrew.beet@noaa.gov", role = c("aut"), comment = c(ORCID = "0000-0001-8270-7090")),
+    person(given = "Abigail", family = "Tyrell", email = "abigail.tyrell@noaa.gov", role = c("aut")),
+    person(given = "Stephanie", family = "Owen", email = "stephanie.owen@noaa.gov", role = c("aut")),
+    person(given = "Maxwell", family = "Grezlik", email = "maxwell.grezlik@noaa.gov", role = c("aut")))
+Description: A package to generate indicators for the State of the Ecosystem report.
+License: file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: 
     R (>= 3.5)
 LazyData: true
-Suggests: 
-    knitr,
-    rmarkdown
-VignetteBuilder: knitr
 Imports: 
     dplyr,
     data.table,
@@ -27,7 +26,13 @@ Imports:
     stringr,
     tidyr,
     sf,
-    vegan
+    vegan,
+    tibble,
+    stocksmart,
+    rlang,
+    utils,
+    zoo
 Remotes:
   NOAA-EDAB/survdat,
+  NOAA-EDAB/stocksmart,
   NOAA-EDAB/comlandr

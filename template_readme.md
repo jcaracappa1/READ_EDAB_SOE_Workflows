@@ -83,7 +83,7 @@ workflow_species_dist(outputPath,inputPathSurvey,inputPathSpecies)
 * `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
 The rds file name is hardcoded as `species_dist.rds` to match the `ecodata` package dataset
 
-## Commercial Laindings Based Indicators
+## Commercial Landings Based Indicators
 
 The commercial data will pulled from the Oracle database via a cron job (quarterly?) using R function
 
@@ -117,4 +117,49 @@ The rds file name is hardcoded as `bennet.rds` to match the `ecodata` package da
 
 ### comdat
 
+To run the "workflow" below, it is assumed that the commercial data has been pulled using the 
+`get_commercial_data` function above and that menhaden data have been pulled using the 
+`create_menhaden_input.R` script in the folder `data-raw`.
+*Note: the following function resides in the folder `data-raw` and is NOT part of the package*
 
+```R
+workflow_comdat(comdat_path, input_path_species, menhaden_path, outputPathDataSets)
+```
+
+* `comdat_path` is the path to the raw, comprehensive commercial landings data file, e.g., `EDAB_Datasets/commercial_comdat.rds`.
+* `input_path_species` is the path to the species list used for grouping, e.g., `EDAB_Datasets/SOE_species_list_24.rds`.
+* `menhaden_path` is the path to the Menhaden landings data output by create_`create_menhaden_input.R`.
+* `outputPathDataSets` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
+The rds file name is hardcoded as `comdat.rds` to match the `ecodata` package dataset
+
+## `stocksmart` Based Indicators
+
+To run the "workflow" below, it is assumed that the `stocksmart` R package has been updated to include recent assessment data.
+
+*Note: the following function resides in the folder `data-raw` and is NOT part of the package*
+
+```
+workflow_stock_status(inputPath, outputPath)
+```
+
+* `inputPath` is the path to static data set `EDAB_Datasets/decoder.csv`.
+* `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
+The rds file name is hardcoded as `stock_status.rds` to match the `ecodata` package dataset
+
+
+## Oceanographic Indicators
+
+### Transition Dates (trans_dates)
+
+To run the "workflow" below, it is assumed that the static input file from Kevin Friedland is present.
+
+*Note: the following function resides in the folder `data-raw` and is NOT part of the package*
+
+
+```
+workflow_trans_dates(inputPath, outputPath)
+```
+
+* `inputPath` is the path to static data set `EDAB_Datasets/TS_SHP_adv rep MAB GOM GBK NES SCSPoly.csv`.
+* `outputPath` is the path to folder where indicator data should be saved, `EDAB_Indicators`.
+The rds file name is hardcoded as `trans_dates.rds` to match the `ecodata` package dataset
