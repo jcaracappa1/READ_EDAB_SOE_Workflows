@@ -3,7 +3,7 @@ Title: Generates Indicators for the State of the Ecosystem report
 Version: 0.0.0.9000
 Authors@R: 
     person("Joseph", "Caracappa", , "joseph.caracappa@noaa.gov", role = c("aut", "cre"))
-Description: Generates Indicators for the State of the Ecosystem report
+Description: A package to generate indicators for the State of the Ecosystem report.
 License: file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -11,10 +11,6 @@ RoxygenNote: 7.3.2
 Depends: 
     R (>= 3.5)
 LazyData: true
-Suggests: 
-    knitr,
-    rmarkdown
-VignetteBuilder: knitr
 Imports: 
     dplyr,
     data.table,
