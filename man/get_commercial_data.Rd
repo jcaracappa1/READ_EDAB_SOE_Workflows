@@ -4,7 +4,7 @@
 \alias{get_commercial_data}
 \title{Get commercial data set to store somewhere}
 \usage{
-get_commercial_data(channel, outputPathDatasets = NULL)
+get_commercial_data(channel)
 }
 \arguments{
 \item{channel}{an Object inherited from DBIConnection-class.}
