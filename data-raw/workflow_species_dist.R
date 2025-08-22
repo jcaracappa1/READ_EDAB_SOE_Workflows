@@ -7,6 +7,7 @@
 #' 
 #' @param inputPathSurvey Character string. Full path to the survdat data pull rds file
 #' @param inputPathSpecies Character string. Full path to the species list data pull rds file
+#' @param staticPath Character string. Path to folder for static files for depth and coast shape are saved
 #' @param outputPath Character string. Path to folder where data pull should be saved
 #' 
 #' @return species_dist data frame used in ecodata 
@@ -21,21 +22,26 @@
 #'   outputPath <- here::here()
 #'   inputPathSurvey <- here::here("surveyNoLengths.rds")
 #'   inputPathSpecies <- "/home/<user>/EDAB_Datasets/SOE_species_list_24.rds"
+#'   staticPath <-  "/home/<user>/EDAB_Resources/"
 #'   workflow_create_species_dist(outputPath,inputPathSurvey,inputPathSpecies)
 #' }
 #' 
 
-workflow_species_distribution <- function(outputPath,inputPathSurvey,inputPathSpecies) {
+workflow_species_dist <- function(outputPath,inputPathSurvey,inputPathSpecies,staticPath) {
   
   # Assumes that survey data has been pulled and is located in inputPathSurvey
   #get_survey_data(channel,outputPath = outputPath)
   
   # Add check to skip running workflow if data not present
-  if(file.exists(inputPathSpecies) && file.exists(inputPathSurvey)) {
+  if(file.exists(inputPathSpecies) && file.exists(inputPathSurvey) && file.exists(staticPath)) {
     
-    SOEworkflows::create_species_distribution(inputPathSurvey = inputPathSurvey,
+    indicatorData <- SOEworkflows::create_species_dist(inputPathSurvey = inputPathSurvey,
                                            inputPathSpecies = inputPathSpecies,
+                                           staticPath = staticPath,
                                            outputPath = outputPath)
+    # write data to file
+    saveRDS(indicatorData,paste0(outputPath,"/species_dist.rds"))
+    
   } else {
     # 
     message("One or more of the input files are not present in the location specified")
