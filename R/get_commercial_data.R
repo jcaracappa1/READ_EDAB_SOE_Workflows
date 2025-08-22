@@ -16,7 +16,7 @@
 #'
 #'@export
 
-get_commercial_data <- function(channel, outputPathDatasets = NULL) {
+get_commercial_data <- function(channel) {
   end.year <- as.numeric(format(Sys.Date(), "%Y"))
 
   ## These EPU definitions should/could be in an external file or a data package
