@@ -4,8 +4,8 @@
 #'
 #' @param inputPathSurvey Character string. Full path to the survdat data pull rds file
 #' @param inputPathSpecies Character string. Full path to the species list data pull rds file
+#' @param staticPath Character string. Path to folder for static files for depth and coast shape are saved
 #' @param outputPath Character string. Path to folder where data pull should be saved
-#' @param staticPath Character string. Path to folder for static files
 #'
 #' @examples
 #' \dontrun{
@@ -187,7 +187,7 @@ create_species_dist <- function(inputPathSurvey, inputPathSpecies, staticPath, o
       # excluding 2020 & 2023
       dplyr::filter(!YEAR %in% c(2020,2023))
     
-# Final reshaping and metadata (from get_species_dist) ------------------
+# Final reshaping (from get_species_dist) ------------------
     species_dist <- dist_mean |>
       dplyr::mutate(YEAR = as.integer(YEAR)) |>
       dplyr::rename(
@@ -212,10 +212,6 @@ create_species_dist <- function(inputPathSurvey, inputPathSpecies, staticPath, o
     
     species_dist <- dplyr::right_join(species_dist, expanded, by = c("Time", "Var")) |>
       dplyr::arrange(Time)
-    
-    attr(species_dist, "tech-doc_url") <- "https://noaa-edab.github.io/tech-doc/species-distribution-indicators.html"
-    attr(species_dist, "data_steward") <- c("Kevin Friedland <kevin.freidland@noaa.gov>")
-    attr(species_dist, "plot_script") <- list(`mf_MAB` = "macrofauna_MAB.Rmd-species-dist.R")
   
 # return(species_dist) -----------------------
       return(species_dist)
